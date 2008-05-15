@@ -21,6 +21,9 @@ typedef enum
 
 #define MAX_MSG_LEN 64
 
+/** Nombre d'argument max pour une commande */
+#define CMD_MAX_ARG 4
+
 typedef enum
 {
     C_LIST = 0,
@@ -31,15 +34,28 @@ typedef enum
     C_DELE = 5,
     C_MKDIR = 6,
     C_RMDIR = 7,
-    C_ERROR = 8,
+    C_HELP = 8,
+    C_QUIT = 9,
+    C_ERROR = 10,
 
     C_COUNT
 } cmd_type_t;
 
 
+typedef struct
+{
+    user_t * user;
+    cmd_type_t type;
+    char * args[CMD_MAX_ARG];
+} cmd_t;
 
 
-cmd_type_t command_from_string(char * str);
-char * command_to_string(cmd_type_t c);
+
+cmd_type_t command_type_from_string(char * str);
+char * command_type_to_string(cmd_type_t c);
+
+char command_arg_count(cmd_type_t c);
+
+void command_from_string(char * str, cmd_t * dest);
 
 #endif

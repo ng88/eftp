@@ -25,7 +25,7 @@ LDFLAGS=
 
 SRC=protocol.c common.c vector.c md5.c misc.c
 
-SRC1=eftpd.c server.c user.c $(SRC)
+SRC1=eftpd.c server.c server_act.c user.c $(SRC)
 OBJS1=$(SRC1:.c=.o)
 EXE1=eftpd
 

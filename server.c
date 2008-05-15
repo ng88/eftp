@@ -125,13 +125,40 @@ int process_new_child(int fd)
 {
     int ret = 0;
 
+    user_t user;
+
+    user.fd = fd;
+    user.login = NULL;
+    user.passphrase = NULL;
+
+    cmd_t cmd;
+    cmd.user = &user;
+
     if((ret = send_answer(fd, A_OK, "waiting for user login")) < 0)
        return ret;
 
 
+    while((ret = get_answer(cmd)) > -1);
 
     return ret;
 }
+
+int get_answer(cmd_t * cmd)
+{
+    c_assert(cmd && cmd->user);
+
+    enum { BUFFS = 256 };
+
+    char buff[BUFFS];
+
+    if( (readallline(cmd->user->fd, buff, BUFFS)) < -1)
+	return -1;
+
+    command_from_string(buff, cmd);
+
+    return execute_command(cmd);
+}
+
 
 int send_answer(int fd, ans_t a, char * txt)
 {
