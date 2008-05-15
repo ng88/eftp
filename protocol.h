@@ -47,6 +47,8 @@ typedef enum
 typedef struct
 {
     struct _user_t * user;
+    struct _user_pool_t * pool;
+    int fd;
     cmd_type_t type;
     char * args[CMD_MAX_ARG];
 } cmd_t;

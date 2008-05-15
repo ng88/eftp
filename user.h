@@ -10,12 +10,11 @@
 
 typedef struct _user_t
 {
-    int fd;
     char * login;
     char * passphrase;
 } user_t;
 
-typedef struct
+typedef struct _user_pool_t
 {
     /* vector of user_t * */
     vector_t * users;
@@ -25,6 +24,9 @@ typedef struct
 user_pool_t * create_user_pool();
 void read_users_from_file(user_pool_t * p, FILE * f);
 user_t * get_user_from_name(user_pool_t * p, char * login);
+
+bool check_user_passphrase(user_t * u, char * pass);
+
 #define get_user_at(p, i) \
         ((user_t *)vector_get_element_at((p)->users, (i)))
 #define user_count(p) \

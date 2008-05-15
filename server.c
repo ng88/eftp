@@ -19,6 +19,7 @@
 
 #define RECV_BUFF_SIZE 768
 
+
 static int server_run;
 static user_pool_t * existing_users;
 static vector_t * users; /* connected users */
@@ -138,14 +139,10 @@ int process_new_child(int fd)
 {
     int ret = 0;
 
-    user_t user;
-
-    user.fd = fd;
-    user.login = NULL;
-    user.passphrase = NULL;
-
     cmd_t cmd;
-    cmd.user = &user;
+    cmd.user = NULL;
+    cmd.pool = existing_users;
+    cmd.fd = fd;
 
     if((ret = send_answer(fd, A_OK, 0, "waiting for user login and password")) < 0)
        return ret;
@@ -159,13 +156,13 @@ int process_new_child(int fd)
 
 int get_answer(cmd_t * cmd)
 {
-    c_assert(cmd && cmd->user);
+    c_assert(cmd);
 
     enum { BUFFS = 256 };
 
     char buff[BUFFS];
 
-    if( (recvallline(cmd->user->fd, buff, BUFFS)) < -1)
+    if( (recvallline(cmd->fd, buff, BUFFS)) < -1)
 	return -1;
 
     dbg_printf("rec command=%s\n", buff);
@@ -175,25 +172,19 @@ int get_answer(cmd_t * cmd)
     dbg_printf("cmd type=%d\n", cmd->type);
 
     if(cmd->type == C_ERROR)
-	return send_answer(cmd->user->fd, A_ERROR, RC_BAD_CMD, "bad command or bad parameters");
+	return send_error(cmd, RC_BAD_CMD);
     else
     {
-	switch(execute_command(cmd))
+	rec_t v = execute_command(cmd);
+
+	switch(v)
 	{
-	case RC_ACCESS_DENIED:
-	    send_answer(cmd->user->fd, A_ERROR, RC_ACCESS_DENIED, "access denied");
-	    return 0;
-	case RC_NO_AUTH:
-	    send_answer(cmd->user->fd, A_ERROR, RC_NO_AUTH, "not logged in");
-	    return 0;
-	case RC_CMD_ERR:
-	    send_answer(cmd->user->fd, A_ERROR, RC_CMD_ERR, "command error");
-	    return 0;
 	case RC_OK:
 	    return 0;
 	case RC_QUIT:
-	default:
 	    return -1;
+	default:
+	    return send_error(cmd, v);
 	}
     }
 }

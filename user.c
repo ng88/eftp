@@ -108,6 +108,13 @@ user_t * get_user_from_name(user_pool_t * p, char * login)
     return NULL;
 }
 
+bool check_user_passphrase(user_t * u, char * pass)
+{
+    c_assert(u && pass);
+    return !strcmp(u->passphrase, pass);
+}
+
+
 void print_user_pool(user_pool_t * p, FILE * f)
 {
     c_assert(p && f);

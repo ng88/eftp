@@ -6,12 +6,15 @@
 
 typedef enum
 {
-    RC_OK,
+    RC_OK = 0,
     RC_ACCESS_DENIED,
     RC_NO_AUTH,
     RC_CMD_ERR,
     RC_BAD_CMD,
+    RC_BAD_AUTH,
     RC_QUIT,
+
+    RC_COUNT
 } rec_t;
 
 typedef rec_t (*action_fn_t)(cmd_t * infos);
@@ -20,6 +23,7 @@ typedef rec_t (*action_fn_t)(cmd_t * infos);
 
 rec_t execute_command(cmd_t * c);
 
+int send_error(cmd_t * infos, rec_t r);
 
 
 rec_t action_list(cmd_t * infos);

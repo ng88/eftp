@@ -8,6 +8,7 @@
 #include "user.h"
 #include "vector.h"
 #include "bool.h"
+#include "server.h"
 
 static action_fn_t actions[C_COUNT] =
            {
@@ -25,6 +26,16 @@ static action_fn_t actions[C_COUNT] =
 	       &action_error,
 	   };
 
+static char * error_msg[RC_COUNT] = 
+           {
+	       "",
+	       "access denied",
+	       "not logged in",
+	       "command error",
+	       "bad command or bad parameters",
+	       "bad login or password",
+	       "",
+	   };
 
 rec_t execute_command(cmd_t * c)
 {
@@ -32,6 +43,14 @@ rec_t execute_command(cmd_t * c)
 
     return (*(actions[c->type]))(c);
 }
+
+int send_error(cmd_t * infos, rec_t r)
+{
+    return send_answer(infos->fd, A_ERROR, r, error_msg[r]);
+}
+
+
+
 
 rec_t action_list(cmd_t * infos)
 {
@@ -118,7 +137,20 @@ rec_t action_quit(cmd_t * infos)
 
 rec_t action_auth(cmd_t * infos)
 {
-    c_warning2(false, "Not Yet Implemented " );
+    printf("%s:%s\n", infos->args[0], infos->args[1]);
+
+    user_t * user = get_user_from_name(infos->pool, infos->args[0]);
+
+    if(!user)
+	return RC_BAD_AUTH;
+
+    if(!check_user_passphrase(user, infos->args[1]))
+	return RC_BAD_AUTH;
+
+    infos->user = user;
+
+    send_answer(infos->fd, A_OK, 0, "welcome");
+
     return RC_OK;
 }
 
@@ -131,5 +163,5 @@ rec_t action_error(cmd_t * infos)
 bool check_auth(cmd_t * infos)
 {
     c_assert(infos);
-    return infos->user->login != NULL;
+    return infos->user != NULL;
 }

@@ -55,43 +55,6 @@ int recvall(int fd, char * buff, size_t size)
     return n == -1 ? -1 : 0;
 } 
 
-char * create_challenge()
-{
-
-    static bool init = false;
-
-    if(!init)
-    {
-	srand(time(0));
-	init = true;
-    }
-
-    char buff[CHALLENGE_SIZE];
-
-    int i = 0;
-    while(i < CHALLENGE_SIZE)
-	buff[i++] = (char)(1 + rand() % 253);
-
-    char * r = strdup(buff);
-
-    c_assert(r);
-
-    return r;
-}
-
-void challenge_answer(char * ch, char * pass, MD5_CTX_ppp * m)
-{
-    c_assert(ch && pass && m);
-
-    MD5Init_ppp(m);
-
-    MD5Update_ppp(m, ch, CHALLENGE_SIZE);
-    MD5Update_ppp(m, pass, strlen(pass));
-    MD5Update_ppp(m, ch, CHALLENGE_SIZE);
-
-    MD5Final_ppp(m);
-}
-
 int writeall(int fd, void * src, size_t s)
 {
     c_assert(s == 0 || (s && src));

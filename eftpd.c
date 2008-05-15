@@ -3,6 +3,7 @@
 #include <signal.h>
 #include <string.h>
 #include <unistd.h>
+#include <sys/wait.h>
 
 #include "server.h"
 #include "user.h"

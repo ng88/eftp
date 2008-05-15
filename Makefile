@@ -23,7 +23,7 @@ CC=gcc
 CFLAGS=-W -Wall -Wno-unused -O3 $(DDPFLAGS) $(DEBUGFLAGS) $(ASSERTFLAGS)
 LDFLAGS=
 
-SRC=protocol.c common.c vector.c md5.c misc.c
+SRC=protocol.c common.c vector.c misc.c
 
 SRC1=eftpd.c server.c server_act.c user.c $(SRC)
 OBJS1=$(SRC1:.c=.o)
@@ -36,9 +36,8 @@ EXE2=eftp
 
 all: $(EXE1) $(EXE2)
 
-common.o: protocol.h md5.h common.h bool.h assert.h
+common.o: protocol.h common.h bool.h assert.h
 eftpd.o: server.h user.h protocol.h misc.h bool.h assert.h
-md5.o: md5.h assert.h
 misc.o: bool.h misc.h
 protocol.o: assert.h protocol.h
 server.o: user.h common.h server.h assert.h vector.h
