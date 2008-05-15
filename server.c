@@ -9,6 +9,8 @@
 #include <arpa/inet.h>
 #include <errno.h>
 #include <time.h>
+#include <signal.h>
+#include <sys/wait.h>
 
 #include "assert.h"
 #include "vector.h"
@@ -86,9 +88,16 @@ int start_server(user_pool_t * eu, port_t port)
 	    dbg_printf("incoming connection from %s on socket %d\n",
 		       inet_ntoa(rmaddr.sin_addr), fd);
 
-	    /*
-	      fork ici
-	    */
+	    pid_t c = fork();
+
+	    if(c == 0)
+	     /* fils */
+		process_new_child(fd);
+	    else if(c == -1)
+		c_warning2(0, "fork error");
+	    else
+	    { /* pere */
+	    }
 	    
 	}
 	    
@@ -107,6 +116,38 @@ int start_server(user_pool_t * eu, port_t port)
 void stop_server()
 {
     server_run = 0;
+    kill(0, SIGTERM);
+    while(wait(NULL) != -1);
+}
+
+
+int process_new_child(int fd)
+{
+    int ret = 0;
+
+    if((ret = send_answer(fd, A_OK, "waiting for user login")) < 0)
+       return ret;
+
+
+
+    return ret;
+}
+
+int send_answer(int fd, ans_t a, char * txt)
+{
+    enum { BUFFS = 12 + MAX_MSG_LEN };
+
+    char buff[BUFFS];
+
+    c_assert(txt == NULL || strlen(txt) < MAX_MSG_LEN);
+
+    snprintf(buff, BUFFS, "%d %s %s\n",
+	     a,
+	     a == A_ERROR ? "error" : "ok",
+	     txt ? txt : ""
+	    );
+
+    return writeall(fd, buff, strlen(buff));
 }
 
 

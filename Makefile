@@ -23,7 +23,7 @@ CC=gcc
 CFLAGS=-W -Wall -Wno-unused -O3 $(DDPFLAGS) $(DEBUGFLAGS) $(ASSERTFLAGS)
 LDFLAGS=
 
-SRC=common.c vector.c md5.c misc.c
+SRC=protocol.c common.c vector.c md5.c misc.c
 
 SRC1=eftpd.c server.c user.c $(SRC)
 OBJS1=$(SRC1:.c=.o)
