@@ -36,12 +36,13 @@ EXE2=eftp
 
 all: $(EXE1) $(EXE2)
 
-
 common.o: protocol.h md5.h common.h bool.h assert.h
 eftpd.o: server.h user.h protocol.h misc.h bool.h assert.h
 md5.o: md5.h assert.h
 misc.o: bool.h misc.h
+protocol.o: assert.h protocol.h
 server.o: user.h common.h server.h assert.h vector.h
+server_act.o: protocol.h server_act.h assert.h vector.h
 user.o: vector.h bool.h protocol.h user.h assert.h
 vector.o: vector.h assert.h
 
