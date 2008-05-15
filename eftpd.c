@@ -33,6 +33,11 @@ void stop_server_handler(int s)
     stop_server();
 }
 
+void child_stopped(int s)
+{
+    wait(NULL);
+}
+
 int main(int argc, char ** argv)
 {
     int optch;
@@ -92,6 +97,11 @@ int main(int argc, char ** argv)
 
     sigaction(SIGTERM, &nv, &old);
     sigaction(SIGINT, &nv, &old);
+
+    nv.sa_handler = &child_stopped;
+
+    sigaction(SIGCHLD, &nv, &old);
+
 
     if(exe_daemon)
     {

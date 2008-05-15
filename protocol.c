@@ -16,6 +16,7 @@ static char * cmd_names[C_COUNT] =
 	       "RMDIR",
 	       "HELP",
 	       "QUIT",
+	       "AUTH",
 	       "ERROR"
 	   };
 
@@ -31,21 +32,22 @@ static char cmd_arg_count[C_COUNT] =
 	       1,
 	       0,
 	       0,
+	       2,
 	       0,
 	   };
 
 cmd_type_t command_type_from_string(char * str)
 {
-    if(str == NULL)
+    if(!str)
 	return C_ERROR;
 
     int i;
 
     for(i = 0; i < C_COUNT; ++i)
-	if(!strcmp(str, cmd_names[i]))
+  	if(!strcmp(str, cmd_names[i]))
 	    return i;
-
-    return C_ERROR;
+  
+  return C_ERROR;
 }
 
 char * command_type_to_string(cmd_type_t c)
@@ -78,19 +80,17 @@ void command_from_string(char * str, cmd_t * dest)
     if(dest->type == C_ERROR)
 	return;
 
-
-    for(i = 0; i < command_arg_count(dest->type); ++i)
+    for(i = 0; i < CMD_MAX_ARG; ++i)
     {
 	dest->args[i] = strtok(NULL, " ");
 
 	if(!dest->args[i])
-	{
-	    if(i != command_arg_count(dest->type))
-		dest->type = C_ERROR;
-
 	    break;
-	}
+
     }
+
+    if(i != command_arg_count(dest->type))
+	dest->type = C_ERROR;
 }
 
 

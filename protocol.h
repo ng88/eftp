@@ -37,7 +37,8 @@ typedef enum
     C_RMDIR = 7,
     C_HELP = 8,
     C_QUIT = 9,
-    C_ERROR = 10,
+    C_AUTH = 10,
+    C_ERROR = 11,
 
     C_COUNT
 } cmd_type_t;
