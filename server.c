@@ -14,6 +14,7 @@
 
 #include "assert.h"
 #include "vector.h"
+#include "server_act.h"
 
 #define RECV_BUFF_SIZE 768
 
@@ -138,7 +139,7 @@ int process_new_child(int fd)
        return ret;
 
 
-    while((ret = get_answer(cmd)) > -1);
+    while((ret = get_answer(&cmd)) > -1);
 
     return ret;
 }
@@ -151,7 +152,7 @@ int get_answer(cmd_t * cmd)
 
     char buff[BUFFS];
 
-    if( (readallline(cmd->user->fd, buff, BUFFS)) < -1)
+    if( (recvallline(cmd->user->fd, buff, BUFFS)) < -1)
 	return -1;
 
     command_from_string(buff, cmd);
@@ -174,7 +175,7 @@ int send_answer(int fd, ans_t a, char * txt)
 	     txt ? txt : ""
 	    );
 
-    return writeall(fd, buff, strlen(buff));
+    return sendall(fd, buff, strlen(buff));
 }
 
 

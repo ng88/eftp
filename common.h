@@ -7,10 +7,12 @@
 
 
 /** Send all the 'size' bytes of 'buff' to 'fd' */
-int sendall(int fd, char * buff, int * size);
+int sendall(int fd, char * buff, size_t size);
 
 /** Receive 'size' bytes from 'fd' to 'buff' */
-int recvall(int fd, char * buff, int * size);
+int recvall(int fd, char * buff, size_t size);
+
+int recvallline(int fd, char * dest, size_t s);
 
 char * create_challenge();
 
@@ -20,8 +22,6 @@ void challenge_answer(char * challenge, char * userpwd, MD5_CTX_ppp * m);
 
 int writeall(int fd, void * src, size_t s);
 int readall(int fd, void * src, size_t s);
-
-int readallline(int fd, char * dest, size_t s);
 
 #define HANDLE_ERR(v, str) \
     do { if( (v) == -1 ) { perror(str); return EXIT_FAILURE; } } while(0)

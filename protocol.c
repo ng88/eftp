@@ -1,6 +1,7 @@
 
 #include "assert.h"
 #include "protocol.h"
+#include "user.h"
 #include <string.h>
 
 static char * cmd_names[C_COUNT] =
@@ -54,7 +55,7 @@ char * command_type_to_string(cmd_type_t c)
 
 char command_arg_count(cmd_type_t c)
 {
-    c_assert(cmd_arg_count[dest->type] < CMD_MAX_ARG);
+    c_assert(cmd_arg_count[c] < CMD_MAX_ARG);
     return cmd_arg_count[c];
 }
 

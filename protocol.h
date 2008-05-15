@@ -2,6 +2,7 @@
 #define PROTOCOL_H
 
 #include <netinet/in.h>
+
 typedef uint16_t port_t;
 
 #define SERVER_DEFAULT_PORT 2021
@@ -44,7 +45,7 @@ typedef enum
 
 typedef struct
 {
-    user_t * user;
+    struct _user_t * user;
     cmd_type_t type;
     char * args[CMD_MAX_ARG];
 } cmd_t;

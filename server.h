@@ -14,7 +14,7 @@ void stop_server();
 
 int process_new_child(int fd);
 
-
+int get_answer(cmd_t * cmd);
 int send_answer(int fd, ans_t a, char * message);
 
 

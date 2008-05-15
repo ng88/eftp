@@ -6,8 +6,9 @@
 
 #include "assert.h"
 #include "vector.h"
+#include "bool.h"
 
-static action_fn_t[C_COUNT] =
+static action_fn_t actions[C_COUNT] =
            {
 	       &action_list,
 	       &action_pwd,
@@ -27,53 +28,62 @@ int execute_command(cmd_t * c)
 {
     c_assert(c);
 
-    return (*(action_fn_t[c->type]))(c);
+    return (*(actions[c->type]))(c);
 
 }
 
 int action_list(cmd_t * infos)
 {
-    c_warning2(false, "Not Yet Implemented");
+    c_warning2(false, "Not Yet Implemented " );
+    return 0;
 }
 
 int action_pwd(cmd_t * infos)
 {
-    c_warning2(false, "Not Yet Implemented");
+    c_warning2(false, "Not Yet Implemented " );
+    return 0;
 }
 
 int action_retr(cmd_t * infos)
 {
-    c_warning2(false, "Not Yet Implemented");
+    c_warning2(false, "Not Yet Implemented " );
+    return 0;
 }
 
 int action_put(cmd_t * infos)
 {
-    c_warning2(false, "Not Yet Implemented");
+    c_warning2(false, "Not Yet Implemented " );
+    return 0;
 }
 
 int action_cwd(cmd_t * infos)
 {
-    c_warning2(false, "Not Yet Implemented");
+    c_warning2(false, "Not Yet Implemented " );
+    return 0;
 }
 
 int action_dele(cmd_t * infos)
 {
-    c_warning2(false, "Not Yet Implemented");
+    c_warning2(false, "Not Yet Implemented " );
+    return 0;
 }
 
 int action_mkdir(cmd_t * infos)
 {
-    c_warning2(false, "Not Yet Implemented");
+    c_warning2(false, "Not Yet Implemented " );
+    return 0;
 }
 
 int action_rmdir(cmd_t * infos)
 {
-    c_warning2(false, "Not Yet Implemented");
+    c_warning2(false, "Not Yet Implemented " );
+    return 0;
 }
 
 int action_help(cmd_t * infos)
 {
-    c_warning2(false, "Not Yet Implemented");
+    c_warning2(false, "Not Yet Implemented " );
+    return 0;
 }
 
 int action_quit(cmd_t * infos)
@@ -83,5 +93,6 @@ int action_quit(cmd_t * infos)
 
 int action_error(cmd_t * infos)
 {
-    c_warning2(false, "Not Yet Implemented");
+    c_warning2(false, "Not Yet Implemented " );
+    return 0;
 }

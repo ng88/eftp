@@ -8,7 +8,7 @@
 
 #include "protocol.h"
 
-typedef struct
+typedef struct _user_t
 {
     int fd;
     char * login;

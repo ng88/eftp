@@ -10,15 +10,15 @@
 #include "bool.h"
 #include "assert.h"
 
-int sendall(int fd, char * buff, int * size)
+int sendall(int fd, char * buff, size_t size)
 {
     c_assert(buff && size);
 
-    int total = 0;
-    int bytesleft = *size;
+    size_t total = 0;
+    size_t bytesleft = size;
     int n = -1;
 
-    while(total < *size)
+    while(total < size)
     {
         n = send(fd, buff + total, bytesleft, MSG_NOSIGNAL);
 
@@ -29,21 +29,19 @@ int sendall(int fd, char * buff, int * size)
         bytesleft -= n;
     }
 
-    *size = total;
-
     return n == -1 ? -1 : 0;
 } 
 
 
-int recvall(int fd, char * buff, int * size)
+int recvall(int fd, char * buff, size_t size)
 {
-    c_assert(buff && size);
+    c_assert(buff);
 
-    int total = 0;
-    int bytesleft = *size;
+    size_t total = 0;
+    size_t bytesleft = size;
     int n = -1;
 
-    while(total < *size)
+    while(total < size)
     {
         n = recv(fd, buff + total, bytesleft, MSG_NOSIGNAL);
 
@@ -53,8 +51,6 @@ int recvall(int fd, char * buff, int * size)
         total += n;
         bytesleft -= n;
     }
-
-    *size = total;
 
     return n == -1 ? -1 : 0;
 } 
@@ -131,3 +127,40 @@ int readall(int fd, void * dest, size_t s)
 
     return 1;
 }
+
+int recvallline(int fd, char * buff, size_t s)
+{
+    c_assert(buff);
+
+    size_t total = 0;
+    size_t bytesleft = s;
+    int n = -1;
+    int i;
+
+    while(total < s)
+    {
+        n = recv(fd, buff + total, bytesleft, MSG_NOSIGNAL);
+
+        if (n == -1)
+	    break;
+
+
+	for(i = 0; i < n; ++i)
+	    if(buff[total + i] == '\n')
+	    {
+		buff[total + i] = '\0';
+		return 0;
+	    }
+
+        total += n;
+        bytesleft -= n;
+    }
+
+    buff[s - 1] = '\0';
+
+    return n == -1 ? -1 : 0;
+}
+
+
+
+
