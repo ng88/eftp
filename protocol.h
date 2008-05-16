@@ -19,7 +19,8 @@ typedef enum
 {
     A_OK = 1,
     A_OK_DATA_FOLLOW = 2,
-    A_ERROR = 3,
+    A_OK_PORT = 3,
+    A_ERROR = 4,
 } ans_t;
 
 #define MAX_MSG_LEN 64
@@ -51,6 +52,7 @@ typedef struct
     struct _user_t * user;
     struct _user_pool_t * pool;
     int fd;
+    int datafd;
     cmd_type_t type;
     char * args[CMD_MAX_ARG];
 } cmd_t;

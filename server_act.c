@@ -5,6 +5,8 @@
 #include <string.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <sys/socket.h>
+#include <arpa/inet.h>
 #include <dirent.h>
 #include <unistd.h>
 #include <errno.h>
@@ -57,7 +59,11 @@ int send_error(cmd_t * infos, rec_t r)
 }
 
 
-
+bool check_auth(cmd_t * infos)
+{
+    c_assert(infos);
+    return infos->user != NULL;
+}
 
 rec_t action_list(cmd_t * infos)
 {
@@ -152,24 +158,6 @@ rec_t action_rmdir(cmd_t * infos)
     return RC_OK;
 }
 
-rec_t action_retr(cmd_t * infos)
-{
-    if(!check_auth(infos))
-	return RC_NO_AUTH;
-
-    c_warning2(false, "Not Yet Implemented " );
-    return RC_OK;
-}
-
-rec_t action_put(cmd_t * infos)
-{
-    if(!check_auth(infos))
-	return RC_NO_AUTH;
-
-    c_warning2(false, "Not Yet Implemented " );
-    return RC_OK;
-}
-
 rec_t action_dele(cmd_t * infos)
 {
     if(!check_auth(infos))
@@ -246,8 +234,78 @@ rec_t action_error(cmd_t * infos)
     return RC_BAD_CMD;
 }
 
-bool check_auth(cmd_t * infos)
-{
-    c_assert(infos);
-    return infos->user != NULL;
+rec_t create_dgram_channel(cmd_t * infos)
+{ //////// faire simplement a recvfile sendfile dans common
+///// avec prise en charge controle de flux, simulation perte
+
+    struct sockaddr_in myaddr, si_other;
+
+    if((infos->datafd = socket(AF_INET, SOCK_DGRAM, 0)) < 0)
+	return RC_SOCKET_ERR;
+
+    myaddr.sin_family = AF_INET;
+    myaddr.sin_port = htons(SERVER_DEFAULT_PORT + 1);
+    myaddr.sin_addr.s_addr = htonl(INADDR_ANY);
+    memset(myaddr.sin_zero, 0, sizeof(myaddr.sin_zero));
+
+    if(bind(infos->datafd, (struct sockaddr *)&myaddr, sizeof(myaddr)) < 0)
+	return RC_SOCKET_ERR;
+    
+    char buff[MAX_MSG_LEN];
+
+    snprintf(buff, MAX_MSG_LEN, "(%d)", ntohs(myaddr.sin_port));
+
+    if(send_answer(infos->fd, A_OK_PORT, 0, buff) < 0)
+	return RC_SOCKET_ERR;
+
+   c_warning2(false, ">>>>>>>" );
+    socklen_t fromlen;
+    char buf[32];
+    recvfrom(infos->datafd, buf, 32, 0, (struct sockaddr *)&myaddr, &fromlen);
+    buf[31] = '\0';
+    printf("recfrom=%s\n", buf);
+    sendto(infos->datafd, buf, 32, 0, (struct sockaddr *)&myaddr, &fromlen);
+   c_warning2(false, "<<<<<<<<<" );
+
+    return RC_OK;
 }
+
+
+rec_t action_retr(cmd_t * infos)
+{
+    if(!check_auth(infos))
+	return RC_NO_AUTH;
+
+    rec_t r;
+
+    if( (r = create_dgram_channel(infos)) != RC_OK )
+	return r;
+/*
+
+       ssize_t sendto(int s, const void *buf, size_t len, int flags,
+                      const struct sockaddr *to, socklen_t tolen);
+       char * buff = "ceci est un test\n";
+       sendto(infos->fd, buff, strlen(buff), 0
+*/
+    c_warning2(false, "Not Yet Implemented " );
+    return RC_OK;
+}
+
+rec_t action_put(cmd_t * infos)
+{
+    if(!check_auth(infos))
+	return RC_NO_AUTH;
+
+    rec_t r;
+
+    if( (r = create_dgram_channel(infos)) != RC_OK )
+	return r;
+
+
+    c_warning2(false, "Not Yet Implemented " );
+    return RC_OK;
+}
+
+
+
+

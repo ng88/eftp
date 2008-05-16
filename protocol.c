@@ -24,8 +24,8 @@ static char cmd_arg_count[C_COUNT] =
            {
 	       1,
 	       0,
-	       2,
-	       2,
+	       1,
+	       1,
 	       1,
 	       1,
 	       1,

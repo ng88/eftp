@@ -143,6 +143,7 @@ int process_new_child(int fd)
     cmd.user = NULL;
     cmd.pool = existing_users;
     cmd.fd = fd;
+    cmd.datafd = -1;
 
     if((ret = send_answer(fd, A_OK, 0, "waiting for user login and password")) < 0)
        return ret;
@@ -191,15 +192,26 @@ int get_answer(cmd_t * cmd)
 
 int send_answer(int fd, ans_t a, char code, char * txt)
 {
-    enum { BUFFS = 12 + MAX_MSG_LEN };
+    enum { BUFFS = 24 + MAX_MSG_LEN };
 
     char buff[BUFFS];
 
     c_assert(txt == NULL || strlen(txt) < MAX_MSG_LEN);
 
+    char * ma;
+
+    switch(a)
+    {
+    case A_ERROR: ma = "error"; break;
+    case A_OK: ma = "ok"; break;
+    case A_OK_DATA_FOLLOW: ma = "ok data follow"; break;
+    case A_OK_PORT: ma = "port"; break;
+    default: ma = "???"; break;
+    }
+
     snprintf(buff, BUFFS, "%d%d %s %s\n",
 	     a, code,
-	     a == A_ERROR ? "error" : "ok",
+	     ma,
 	     txt ? txt : ""
 	    );
 
