@@ -11,6 +11,7 @@
 #include <ctype.h>
 #include <fcntl.h>
 #include <termios.h>
+#include <stdarg.h>
 
 #define _XOPEN_SOURCE_
 #include <stdlib.h>
@@ -105,6 +106,11 @@ int connect_to_server(char * server, port_t port)
 	return EXIT_FAILURE;
     }
 */
+
+    char buff[DEFAULT_BUFF_SIZE];
+    if(recvallline(sockfd, buff, DEFAULT_BUFF_SIZE))
+	return EXIT_FAILURE;
+
     client_infos_t infos;
     infos.sockfd = sockfd;
     infos.quit = false;
@@ -153,7 +159,6 @@ void parse_command(client_infos_t * infos, char * str)
     c_assert(str);
 
     int i;
-    char * args[CLIENT_CMD_MAX_ARG];
     char * cmd = strtok(str, " ");
 
     if(!cmd)
@@ -187,9 +192,9 @@ void parse_command(client_infos_t * infos, char * str)
 
     for(i = 0; i < CLIENT_CMD_MAX_ARG; ++i)
     {
-	args[i] = strtok(NULL, " ");
+	infos->args[i] = strtok(NULL, " ");
 
-	if(!args[i])
+	if(!infos->args[i])
 	    break;
     }
 
@@ -199,6 +204,7 @@ void parse_command(client_infos_t * infos, char * str)
 	return;
     }
     infos->quit = false;
+    infos->list = (cmd_actions[icmd] == action_ls);
     (*(cmd_actions[icmd]))(infos);
 
 }
@@ -272,6 +278,66 @@ void flush_std()
 
 }
 
+int send_command(client_infos_t * infos, bool print, char * cmd, ...)
+{
+    char buff[DEFAULT_BUFF_SIZE];
+
+    infos->success = false;
+
+    va_list(ap);
+    va_start(ap, cmd);
+    vsnprintf(buff, DEFAULT_BUFF_SIZE, cmd, ap);
+    va_end(ap);
+
+    buff[DEFAULT_BUFF_SIZE - 1] = '\0';
+
+    int ret = sendall(infos->sockfd, buff, strlen(buff));
+    if(ret < 0)
+    {
+	infos->quit = false;
+	return ret;
+    }
+
+    ret = recvallline(infos->sockfd, buff, DEFAULT_BUFF_SIZE);
+    if(ret < 0)
+    {
+	infos->quit = false;
+	return ret;
+    }
+
+    dbg_printf("rec=%s\n", buff);
+
+    infos->success = (buff[0] == (A_OK +'0'));
+    buff[0] = '>';
+    buff[1] = ' ';
+
+    if(print || !infos->success)
+	printf("%s\n", buff);
+
+    if(infos->list && infos->success)
+    {
+	bool end;
+	do
+	{
+	    ret = recvallline(infos->sockfd, buff, DEFAULT_BUFF_SIZE);
+	    if(ret < 0)
+	    {
+		infos->quit = false;
+		return ret;
+	    }
+
+	    end = (buff[0] == (A_OK +'0') && buff[1] == '0');
+	    if(!end)
+		printf("> %s\n", buff);
+
+	}
+	while(!end);
+    }
+
+    return ret;
+
+}
+
 
 void action_user(client_infos_t * infos)
 {
@@ -287,30 +353,37 @@ void action_put(client_infos_t * infos)
 
 void action_ls(client_infos_t * infos)
 {
+    send_command(infos, false, "LIST .\n");
 }
 
 void action_cd(client_infos_t * infos)
 {
+    send_command(infos, true, "CWD %s\n", infos->args[0]);
 }
 
 void action_pwd(client_infos_t * infos)
 {
+    send_command(infos, true, "PWD\n");
 }
 
 void action_mkdir(client_infos_t * infos)
 {
+    send_command(infos, false, "MKDIR %s\n", infos->args[0]);
 }
 
 void action_rmdir(client_infos_t * infos)
 {
+    send_command(infos, false, "RMDIR %s\n", infos->args[0]);
 }
 
 void action_quit(client_infos_t * infos)
 {
+    send_command(infos, false, "QUIT\n");
     infos->quit = true;
 }
 
 void action_rm(client_infos_t * infos)
 {
+    send_command(infos, false, "DELE %s\n", infos->args[0]);
 }
 

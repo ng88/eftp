@@ -63,8 +63,7 @@ int send_error(cmd_t * infos, rec_t r)
 bool check_auth(cmd_t * infos)
 {
     c_assert(infos);
-    //return infos->user != NULL;
-    return true; // desactive l'auth pr debug plus vite
+    return infos->user != NULL;
 }
 
 rec_t action_list(cmd_t * infos)
@@ -208,6 +207,7 @@ rec_t action_help(cmd_t * infos)
 
 rec_t action_quit(cmd_t * infos)
 {
+    send_answer(infos->fd, A_OK, 0, "bye bye");
     return RC_QUIT;
 }
 

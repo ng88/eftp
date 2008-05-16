@@ -14,6 +14,9 @@ typedef struct
 {
     int sockfd;
     bool quit;
+    bool success;
+    bool list;
+    char * args[CLIENT_CMD_MAX_ARG];
 } client_infos_t;
 
 typedef void (*client_fn_t)(client_infos_t * infos);
@@ -32,6 +35,8 @@ void print_error(char * str);
 char * read_passphrase(char * buff, size_t size);
 
 void flush_std();
+
+int send_command(client_infos_t * infos, bool print, char * cmd, ...);
 
 
 void action_user(client_infos_t * infos);
