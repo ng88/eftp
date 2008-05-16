@@ -420,6 +420,34 @@ void action_put(client_infos_t * infos)
     {
 	int port;
 	sscanf(ret, "30 port (%d)", &port);
-	printf("result=%s <%d>\n", ret, port);
+
+
+	struct sockaddr_in myaddr, si_other;
+	int datafd;
+
+	if((datafd = socket(AF_INET, SOCK_DGRAM, 0)) < 0)
+	{
+	    print_error("socket error");
+	    close(file);
+	    return;
+	}
+
+	myaddr.sin_family = AF_INET;
+	myaddr.sin_port = htons(port);
+	myaddr.sin_addr.s_addr = htonl(INADDR_ANY);
+	memset(myaddr.sin_zero, 0, sizeof(myaddr.sin_zero));
+	
+
+	int n = sendfile(file, datafd, (struct sockaddr *)&myaddr, sizeof(myaddr));
+
+	close(file);
+	close(datafd);
+	
+	if(n == -2)
+	    print_error("file error");
+	else if(n == -1)
+	    print_error("socket error");
     }
+    else
+	close(file);
 }
