@@ -305,9 +305,9 @@ int send_command(client_infos_t * infos, bool print, char * cmd, ...)
 	return ret;
     }
 
-    dbg_printf("rec=%s\n", buff);
+    //dbg_printf("buffer=%s\n", buff);
 
-    infos->success = (buff[0] == (A_OK +'0'));
+    infos->success = (buff[0] != (A_ERROR +'0'));
     buff[0] = '>';
     buff[1] = ' ';
 
@@ -316,7 +316,7 @@ int send_command(client_infos_t * infos, bool print, char * cmd, ...)
 
     if(infos->list && infos->success)
     {
-	bool end;
+	char * pos;
 	do
 	{
 	    ret = recvallline(infos->sockfd, buff, DEFAULT_BUFF_SIZE);
@@ -325,13 +325,23 @@ int send_command(client_infos_t * infos, bool print, char * cmd, ...)
 		infos->quit = false;
 		return ret;
 	    }
+	    //dbg_printf("buffer=%s\n", buff);
 
-	    end = (buff[0] == (A_OK +'0') && buff[1] == '0');
-	    if(!end)
-		printf("> %s\n", buff);
+	    pos = strstr(buff, "10 ok");
+
+	    if(pos)
+	    {
+		if(pos != buff)
+		    pos--;
+
+		*pos = '\0';
+	    }
+
+	    if(pos != buff)
+		printf("%s\n", buff);
 
 	}
-	while(!end);
+	while(!pos);
     }
 
     return ret;
@@ -341,6 +351,9 @@ int send_command(client_infos_t * infos, bool print, char * cmd, ...)
 
 void action_user(client_infos_t * infos)
 {
+    char buff[DEFAULT_BUFF_SIZE];
+    if(read_passphrase(buff, DEFAULT_BUFF_SIZE))
+	send_command(infos, false, "AUTH %s %s\n", infos->args[0], buff);
 }
 
 void action_get(client_infos_t * infos)

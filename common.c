@@ -101,7 +101,6 @@ int recvallline(int fd, char * buff, size_t s)
     size_t total = 0;
     size_t bytesleft = s;
     int n = -1;
-    int i;
 
     while(total < s)
     {
@@ -110,13 +109,11 @@ int recvallline(int fd, char * buff, size_t s)
         if (n == -1)
 	    break;
 
-
-	for(i = 0; i < n; ++i)
-	    if(buff[total + i] == '\n')
-	    {
-		buff[total + i] = '\0';
-		return 0;
-	    }
+	if(buff[total + n - 1] == '\n')
+	{
+	    buff[total + n - 1] = '\0';
+	    return 0;
+	}
 
         total += n;
         bytesleft -= n;
