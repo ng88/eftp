@@ -114,6 +114,7 @@ int connect_to_server(char * server, port_t port)
     client_infos_t infos;
     infos.sockfd = sockfd;
     infos.quit = false;
+    infos.sin_addr = dest_addr.sin_addr;
     wait_command(&infos);
 
     close(sockfd);
@@ -396,6 +397,58 @@ void action_rm(client_infos_t * infos)
 
 void action_get(client_infos_t * infos)
 {
+    struct sockaddr_in myaddr, si_other;
+
+    int datafd;
+    if((datafd = socket(AF_INET, SOCK_DGRAM, 0)) < 0)
+    {
+	print_error("socket error");
+	return;
+    }
+
+    myaddr.sin_family = AF_INET;
+    myaddr.sin_port = htons(SERVER_DEFAULT_DATA_PORT);
+    myaddr.sin_addr.s_addr = htonl(INADDR_ANY);
+    memset(myaddr.sin_zero, 0, sizeof(myaddr.sin_zero));
+
+    if(bind(datafd, (struct sockaddr *)&myaddr, sizeof(myaddr)) < 0)
+    {
+	print_error("socket error");
+	close(datafd);
+	return;
+    }
+
+    char * ret;
+    if((ret = send_command(infos, false, "RETR %s %d\n",
+			  infos->args[0], ntohs(myaddr.sin_port))))
+    {
+	size_t size;
+	sscanf(ret, "40 size (%u)", &size);
+
+	socklen_t fromlen = sizeof(myaddr);
+
+	int file = open(infos->args[0], DEFAULT_WRITE_FILE_FLAGS, 0666);
+
+	if(file < 0)
+	{
+	    close(datafd);
+	    print_error("unable to put file");
+	    return;
+	}
+
+	int n = revcfile(file, datafd, size, (struct sockaddr *)&myaddr, &fromlen);
+
+	close(file);
+	close(datafd);
+	
+	if(n == -2)
+	    print_error("file error");
+	else if(n == -1)
+	    print_error("socket error");
+    }
+    else
+	close(datafd);
+
 }
 
 void action_put(client_infos_t * infos)
@@ -434,7 +487,7 @@ void action_put(client_infos_t * infos)
 
 	myaddr.sin_family = AF_INET;
 	myaddr.sin_port = htons(port);
-	myaddr.sin_addr.s_addr = htonl(INADDR_ANY);
+	myaddr.sin_addr = infos->sin_addr;
 	memset(myaddr.sin_zero, 0, sizeof(myaddr.sin_zero));
 	
 

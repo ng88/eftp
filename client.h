@@ -16,6 +16,7 @@ typedef struct
     bool quit;
     bool success;
     bool list;
+    struct in_addr sin_addr;
     char * args[CLIENT_CMD_MAX_ARG];
 } client_infos_t;
 
