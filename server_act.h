@@ -12,7 +12,9 @@ typedef enum
     RC_CMD_ERR,
     RC_BAD_CMD,
     RC_BAD_AUTH,
+    RC_BAD_FILEDIR,
     RC_QUIT,
+    RC_SOCKET_ERR,
 
     RC_COUNT
 } rec_t;

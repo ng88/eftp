@@ -3,6 +3,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <dirent.h>
+#include <unistd.h>
+#include <errno.h>
 
 #include "assert.h"
 #include "user.h"
@@ -34,6 +39,8 @@ static char * error_msg[RC_COUNT] =
 	       "command error",
 	       "bad command or bad parameters",
 	       "bad login or password",
+	       "file or directory does not exist",
+	       "",
 	       "",
 	   };
 
@@ -57,7 +64,36 @@ rec_t action_list(cmd_t * infos)
     if(!check_auth(infos))
 	return RC_NO_AUTH;
 
-    c_warning2(false, "Not Yet Implemented " );
+    DIR * d;
+    struct dirent * dinfos;
+    d = opendir(infos->args[0]);
+
+    if(!d)
+	return RC_BAD_FILEDIR;
+
+    if(send_answer(infos->fd, A_OK_DATA_FOLLOW, 0, NULL) < 0)
+	return RC_SOCKET_ERR;
+
+    size_t pos = 0;
+    char buff[NAME_MAX + 1];
+
+    while((dinfos = readdir(d)))
+    {
+
+	size_t len = strlen(dinfos->d_name);
+	memcpy(buff, dinfos->d_name, len);
+	buff[len] = '\n';
+
+	if(sendall(infos->fd, buff, len + 1) < 0)
+	    return RC_SOCKET_ERR;
+	
+    }
+
+    if(send_answer(infos->fd, A_OK, 0, NULL) < 0)
+	return RC_SOCKET_ERR;
+    
+    closedir(d);
+
     return RC_OK;
 }
 
@@ -66,7 +102,53 @@ rec_t action_pwd(cmd_t * infos)
     if(!check_auth(infos))
 	return RC_NO_AUTH;
 
-    c_warning2(false, "Not Yet Implemented " );
+    char buff[PATH_MAX];
+
+    if(!getcwd(buff, PATH_MAX))
+	return RC_BAD_FILEDIR;
+
+    if(send_answer(infos->fd, A_OK, 0, buff) < 0)
+	return RC_SOCKET_ERR;
+
+    return RC_OK;
+}
+
+rec_t action_cwd(cmd_t * infos)
+{
+    if(!check_auth(infos))
+	return RC_NO_AUTH;
+
+    if(chdir(infos->args[0]) < 0)
+	return RC_BAD_FILEDIR;
+
+    return action_pwd(infos);;
+}
+
+rec_t action_mkdir(cmd_t * infos)
+{
+    if(!check_auth(infos))
+	return RC_NO_AUTH;
+
+    if(mkdir(infos->args[0], 0750) < 0)
+	return errno == EACCES ? RC_ACCESS_DENIED : RC_BAD_FILEDIR;
+
+    if(send_answer(infos->fd, A_OK, 0, NULL) < 0)
+	return RC_SOCKET_ERR;
+
+    return RC_OK;
+}
+
+rec_t action_rmdir(cmd_t * infos)
+{
+    if(!check_auth(infos))
+	return RC_NO_AUTH;
+
+    if(rmdir(infos->args[0]) < 0)
+	return errno == EACCES ? RC_ACCESS_DENIED : RC_BAD_FILEDIR;
+
+    if(send_answer(infos->fd, A_OK, 0, NULL) < 0)
+	return RC_SOCKET_ERR;
+
     return RC_OK;
 }
 
@@ -88,34 +170,7 @@ rec_t action_put(cmd_t * infos)
     return RC_OK;
 }
 
-rec_t action_cwd(cmd_t * infos)
-{
-    if(!check_auth(infos))
-	return RC_NO_AUTH;
-
-    c_warning2(false, "Not Yet Implemented " );
-    return RC_OK;
-}
-
 rec_t action_dele(cmd_t * infos)
-{
-    if(!check_auth(infos))
-	return RC_NO_AUTH;
-
-    c_warning2(false, "Not Yet Implemented " );
-    return RC_OK;
-}
-
-rec_t action_mkdir(cmd_t * infos)
-{
-    if(!check_auth(infos))
-	return RC_NO_AUTH;
-
-    c_warning2(false, "Not Yet Implemented " );
-    return RC_OK;
-}
-
-rec_t action_rmdir(cmd_t * infos)
 {
     if(!check_auth(infos))
 	return RC_NO_AUTH;
@@ -149,7 +204,8 @@ rec_t action_auth(cmd_t * infos)
 
     infos->user = user;
 
-    send_answer(infos->fd, A_OK, 0, "welcome");
+    if(send_answer(infos->fd, A_OK, 0, "welcome") < 0)
+	return RC_SOCKET_ERR;
 
     return RC_OK;
 }

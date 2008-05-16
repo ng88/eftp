@@ -5,6 +5,8 @@
 
 typedef uint16_t port_t;
 
+#define DEFAULT_BUFF_SIZE 768
+
 #define SERVER_DEFAULT_PORT 2021
 
 #define USER_MAX_PASS_SIZE 64

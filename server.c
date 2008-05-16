@@ -17,7 +17,7 @@
 #include "vector.h"
 #include "server_act.h"
 
-#define RECV_BUFF_SIZE 768
+#define RECV_BUFF_SIZE DEFAULT_BUFF_SIZE
 
 
 static int server_run;
@@ -158,11 +158,9 @@ int get_answer(cmd_t * cmd)
 {
     c_assert(cmd);
 
-    enum { BUFFS = 256 };
+    char buff[DEFAULT_BUFF_SIZE];
 
-    char buff[BUFFS];
-
-    if( (recvallline(cmd->fd, buff, BUFFS)) < -1)
+    if( (recvallline(cmd->fd, buff, DEFAULT_BUFF_SIZE)) < -1)
 	return -1;
 
     dbg_printf("rec command=%s\n", buff);
@@ -181,6 +179,7 @@ int get_answer(cmd_t * cmd)
 	{
 	case RC_OK:
 	    return 0;
+	case RC_SOCKET_ERR:
 	case RC_QUIT:
 	    return -1;
 	default:
