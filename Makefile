@@ -29,7 +29,7 @@ SRC1=eftpd.c server.c server_act.c user.c $(SRC)
 OBJS1=$(SRC1:.c=.o)
 EXE1=eftpd
 
-SRC2= $(SRC)
+SRC2=eftp.c client.c $(SRC)
 OBJS2=$(SRC2:.c=.o)
 EXE2=eftp
 

@@ -90,7 +90,7 @@ int start_server(user_pool_t * eu, port_t port)
 	    dbg_printf("incoming connection from %s on socket %d\n",
 		       inet_ntoa(rmaddr.sin_addr), fd);
 
-	    pid_t c = 0;//fork();
+	    pid_t c = fork();
 
 	    if(c == 0)
 	    {
