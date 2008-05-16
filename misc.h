@@ -10,7 +10,7 @@
       (O_WRONLY | O_CREAT)
 
 #define DEFAULT_READ_FILE_FLAGS \
-      (O)
+      (O_RDONLY)
 
 
 #ifdef __GNUC__

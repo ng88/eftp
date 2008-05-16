@@ -237,14 +237,70 @@ rec_t action_error(cmd_t * infos)
 }
 
 
+/**
+  client >  PUT fichier_dest taille
+  serveur < port_udp
+
+  client >  RETR fichier_src port_udp
+  serveur < taille
+ */
 
 rec_t action_retr(cmd_t * infos)
 {
     if(!check_auth(infos))
 	return RC_NO_AUTH;
 
+    rec_t r;
 
-    return RC_OK;
+    struct sockaddr_in myaddr, si_other;
+
+    if((infos->datafd = socket(AF_INET, SOCK_DGRAM, 0)) < 0)
+	return RC_SOCKET_ERR;
+
+    myaddr.sin_family = AF_INET;
+    myaddr.sin_port = htons(atoi(infos->args[1]));
+    myaddr.sin_addr = infos->sin_addr;
+    memset(myaddr.sin_zero, 0, sizeof(myaddr.sin_zero));
+    
+    char buff[MAX_MSG_LEN];
+    dbg_printf("la1\n");
+    int file = open(infos->args[0], DEFAULT_READ_FILE_FLAGS);
+    if(file < 0)
+    {
+	close(infos->datafd);
+	return errno == EACCES ? RC_ACCESS_DENIED : RC_BAD_FILEDIR;
+    }
+    dbg_printf("la2\n");
+
+    struct stat finfos;
+    if(fstat(file, &finfos) < 0)
+    {
+	close(infos->datafd);
+	return errno == EACCES ? RC_ACCESS_DENIED : RC_BAD_FILEDIR;
+    }
+    dbg_printf("la3\n");
+    snprintf(buff, MAX_MSG_LEN, "(%u)", (size_t)finfos.st_size);
+
+    dbg_printf("la4\n");
+    if(send_answer(infos->fd, A_OK_SIZE, 0, buff) < 0)
+    {
+	close(infos->datafd);
+	return RC_SOCKET_ERR;
+    }
+    dbg_printf("la5\n");
+
+    int n = sendfile(file, infos->datafd, (struct sockaddr *)&myaddr, sizeof(myaddr));
+    dbg_printf("la6\n");
+    close(file);
+    close(infos->datafd);
+
+    if(n == -2)
+	return RC_BAD_FILEDIR;
+    else if(n == -1)
+	return RC_SOCKET_ERR;
+    else
+	return RC_OK;
+
 }
 
 rec_t action_put(cmd_t * infos)
@@ -272,7 +328,7 @@ rec_t action_put(cmd_t * infos)
     
     char buff[MAX_MSG_LEN];
 
-    snprintf(buff, MAX_MSG_LEN, "(%d)", ntohs(myaddr.sin_port));
+    snprintf(buff, MAX_MSG_LEN, "(%d, 0)", ntohs(myaddr.sin_port));
 
     if(send_answer(infos->fd, A_OK_PORT, 0, buff) < 0)
     {

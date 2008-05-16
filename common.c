@@ -12,7 +12,10 @@
 
 int sendtoall(int fd, char * buff, size_t size, struct sockaddr *to, socklen_t tolen)
 {
-    c_assert(buff && size);
+    c_assert(buff);
+
+    if(size == 0)
+	return;
 
     size_t total = 0;
     size_t bytesleft = size;

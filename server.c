@@ -21,14 +21,10 @@
 
 
 static int server_run;
-static user_pool_t * existing_users;
-static vector_t * users; /* connected users */
-static FILE * logfile;
 
 int start_server(user_pool_t * eu, port_t port)
 {
     server_run = 1;
-    existing_users = eu;
 
     struct sockaddr_in myaddr;
     struct sockaddr_in rmaddr;
@@ -100,7 +96,15 @@ int start_server(user_pool_t * eu, port_t port)
 	    {
 	     /* fils */
 		close(fdlisten);
-		process_new_child(fd);
+
+		cmd_t cmd;
+		cmd.user = NULL;
+		cmd.pool = eu;
+		cmd.fd = fd;
+		cmd.sin_addr = rmaddr.sin_addr;
+		cmd.datafd = -1;
+		process_new_child(&cmd);
+
 		dbg_printf("child halted\n");
 		return EXIT_SUCCESS;
 	    }
@@ -135,22 +139,16 @@ void stop_server()
 }
 
 
-int process_new_child(int fd)
+int process_new_child(cmd_t * cmd)
 {
     int ret = 0;
 
-    cmd_t cmd;
-    cmd.user = NULL;
-    cmd.pool = existing_users;
-    cmd.fd = fd;
-    cmd.datafd = -1;
-
-    if((ret = send_answer(fd, A_OK, 0, "waiting for user login and password")) < 0)
+    if((ret = send_answer(cmd->fd, A_OK, 0, "waiting for user login and password")) < 0)
        return ret;
 
-    while((ret = get_answer(&cmd)) > -1);
+    while((ret = get_answer(cmd)) > -1);
 
-    close(fd);
+    close(cmd->fd);
 
     return ret;
 }
@@ -206,6 +204,7 @@ int send_answer(int fd, ans_t a, char code, char * txt)
     case A_OK: ma = "ok"; break;
     case A_OK_DATA_FOLLOW: ma = "ok data follow"; break;
     case A_OK_PORT: ma = "port"; break;
+    case A_OK_SIZE: ma = "size"; break;
     default: ma = "???"; break;
     }
 
