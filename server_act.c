@@ -121,7 +121,7 @@ rec_t action_cwd(cmd_t * infos)
     if(chdir(infos->args[0]) < 0)
 	return RC_BAD_FILEDIR;
 
-    return action_pwd(infos);;
+    return action_pwd(infos);
 }
 
 rec_t action_mkdir(cmd_t * infos)
@@ -175,13 +175,44 @@ rec_t action_dele(cmd_t * infos)
     if(!check_auth(infos))
 	return RC_NO_AUTH;
 
-    c_warning2(false, "Not Yet Implemented " );
+    if(unlink(infos->args[0]) < 0)
+	return errno == EACCES ? RC_ACCESS_DENIED : RC_BAD_FILEDIR;
+
+    if(send_answer(infos->fd, A_OK, 0, NULL) < 0)
+	return RC_SOCKET_ERR;
+
     return RC_OK;
 }
 
 rec_t action_help(cmd_t * infos)
 {
-    c_warning2(false, "Not Yet Implemented " );
+    int i;
+
+    enum { BUFFS= 32 };
+    char buff[BUFFS];
+
+    if(send_answer(infos->fd, A_OK_DATA_FOLLOW, 0, "following commands are available") < 0)
+	return RC_SOCKET_ERR;
+
+    for(i = 0; i < C_ERROR; ++i)
+    {
+	char ac = command_arg_count(i);
+
+	snprintf(buff, BUFFS, "%s (%d parameter%s)\n",
+		command_type_to_string(i),
+		ac,
+		ac > 1 ? "s" : ""
+	    );
+
+	if(sendall(infos->fd, buff, strlen(buff)) < 0)
+	    return RC_SOCKET_ERR;
+
+
+    }
+
+    if(send_answer(infos->fd, A_OK, 0, NULL) < 0)
+	return RC_SOCKET_ERR;
+
     return RC_OK;
 }
 
@@ -212,8 +243,7 @@ rec_t action_auth(cmd_t * infos)
 
 rec_t action_error(cmd_t * infos)
 {
-    c_warning2(false, "Not Yet Implemented " );
-    return RC_OK;
+    return RC_BAD_CMD;
 }
 
 bool check_auth(cmd_t * infos)
