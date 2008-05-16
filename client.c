@@ -278,9 +278,9 @@ void flush_std()
 
 }
 
-int send_command(client_infos_t * infos, bool print, char * cmd, ...)
+char * send_command(client_infos_t * infos, bool print, char * cmd, ...)
 {
-    char buff[DEFAULT_BUFF_SIZE];
+    static char buff[DEFAULT_BUFF_SIZE];
 
     infos->success = false;
 
@@ -295,24 +295,26 @@ int send_command(client_infos_t * infos, bool print, char * cmd, ...)
     if(ret < 0)
     {
 	infos->quit = false;
-	return ret;
+	return NULL;
     }
 
     ret = recvallline(infos->sockfd, buff, DEFAULT_BUFF_SIZE);
     if(ret < 0)
     {
 	infos->quit = false;
-	return ret;
+	return NULL;
     }
 
     //dbg_printf("buffer=%s\n", buff);
 
     infos->success = (buff[0] != (A_ERROR +'0'));
-    buff[0] = '>';
-    buff[1] = ' ';
 
     if(print || !infos->success)
+    {
+	buff[0] = '>';
+	buff[1] = ' ';
 	printf("%s\n", buff);
+    }
 
     if(infos->list && infos->success)
     {
@@ -323,7 +325,7 @@ int send_command(client_infos_t * infos, bool print, char * cmd, ...)
 	    if(ret < 0)
 	    {
 		infos->quit = false;
-		return ret;
+		return NULL;
 	    }
 	    //dbg_printf("buffer=%s\n", buff);
 
@@ -344,7 +346,7 @@ int send_command(client_infos_t * infos, bool print, char * cmd, ...)
 	while(!pos);
     }
 
-    return ret;
+    return buff;
 
 }
 
@@ -354,14 +356,6 @@ void action_user(client_infos_t * infos)
     char buff[DEFAULT_BUFF_SIZE];
     if(read_passphrase(buff, DEFAULT_BUFF_SIZE))
 	send_command(infos, false, "AUTH %s %s\n", infos->args[0], buff);
-}
-
-void action_get(client_infos_t * infos)
-{
-}
-
-void action_put(client_infos_t * infos)
-{
 }
 
 void action_ls(client_infos_t * infos)
@@ -400,3 +394,32 @@ void action_rm(client_infos_t * infos)
     send_command(infos, false, "DELE %s\n", infos->args[0]);
 }
 
+void action_get(client_infos_t * infos)
+{
+}
+
+void action_put(client_infos_t * infos)
+{
+    int file = open(infos->args[0], DEFAULT_READ_FILE_FLAGS);
+    if(file < 0)
+    {
+	print_error("unable to put file");
+	return;
+    }
+
+    struct stat finfos;
+    if(fstat(file, &finfos) < 0)
+    {
+	print_error("unable to stat file");
+	return;
+    }
+
+    char * ret;
+    if((ret = send_command(infos, false, "PUT %s %u\n",
+			  infos->args[0], (size_t)finfos.st_size)))
+    {
+	int port;
+	sscanf(ret, "30 port (%d)", &port);
+	printf("result=%s <%d>\n", ret, port);
+    }
+}

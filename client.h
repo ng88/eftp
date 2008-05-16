@@ -36,7 +36,7 @@ char * read_passphrase(char * buff, size_t size);
 
 void flush_std();
 
-int send_command(client_infos_t * infos, bool print, char * cmd, ...);
+char* send_command(client_infos_t * infos, bool print, char * cmd, ...);
 
 
 void action_user(client_infos_t * infos);
