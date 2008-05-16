@@ -133,6 +133,7 @@ int wait_command(client_infos_t * infos)
     {
 	if(read > 1)
 	{
+	    line[read - 1] = '\0';
 	    parse_command(infos, line);
 
 	    if(infos->quit)
@@ -162,12 +163,12 @@ void parse_command(client_infos_t * infos, char * str)
     }
 
     char * ptr = cmd;
-    while(*cmd)
+
+    while(*ptr)
     {
-	*cmd = tolower(*cmd);
-	cmd++;
+	*ptr = tolower(*ptr);
+	ptr++;
     }
-    printf(">>>%s\n", cmd);
 
     int icmd = -1;
 
@@ -197,7 +198,6 @@ void parse_command(client_infos_t * infos, char * str)
 	print_error("bad number of argument");
 	return;
     }
-    printf("%d %p\n", icmd, cmd_actions[icmd]);
     infos->quit = false;
     (*(cmd_actions[icmd]))(infos);
 
