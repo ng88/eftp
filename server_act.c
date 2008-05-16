@@ -10,11 +10,12 @@
 #include <dirent.h>
 #include <unistd.h>
 #include <errno.h>
+#include <fcntl.h>
 
 #include "assert.h"
 #include "user.h"
 #include "vector.h"
-#include "bool.h"
+#include "misc.h"
 #include "server.h"
 
 static action_fn_t actions[C_COUNT] =
@@ -62,7 +63,8 @@ int send_error(cmd_t * infos, rec_t r)
 bool check_auth(cmd_t * infos)
 {
     c_assert(infos);
-    return infos->user != NULL;
+    //return infos->user != NULL;
+    return true; // desactive l'auth pr debug plus vite
 }
 
 rec_t action_list(cmd_t * infos)
@@ -234,41 +236,6 @@ rec_t action_error(cmd_t * infos)
     return RC_BAD_CMD;
 }
 
-rec_t create_dgram_channel(cmd_t * infos)
-{ //////// faire simplement a recvfile sendfile dans common
-///// avec prise en charge controle de flux, simulation perte
-
-    struct sockaddr_in myaddr, si_other;
-
-    if((infos->datafd = socket(AF_INET, SOCK_DGRAM, 0)) < 0)
-	return RC_SOCKET_ERR;
-
-    myaddr.sin_family = AF_INET;
-    myaddr.sin_port = htons(SERVER_DEFAULT_PORT + 1);
-    myaddr.sin_addr.s_addr = htonl(INADDR_ANY);
-    memset(myaddr.sin_zero, 0, sizeof(myaddr.sin_zero));
-
-    if(bind(infos->datafd, (struct sockaddr *)&myaddr, sizeof(myaddr)) < 0)
-	return RC_SOCKET_ERR;
-    
-    char buff[MAX_MSG_LEN];
-
-    snprintf(buff, MAX_MSG_LEN, "(%d)", ntohs(myaddr.sin_port));
-
-    if(send_answer(infos->fd, A_OK_PORT, 0, buff) < 0)
-	return RC_SOCKET_ERR;
-
-   c_warning2(false, ">>>>>>>" );
-    socklen_t fromlen;
-    char buf[32];
-    recvfrom(infos->datafd, buf, 32, 0, (struct sockaddr *)&myaddr, &fromlen);
-    buf[31] = '\0';
-    printf("recfrom=%s\n", buf);
-    sendto(infos->datafd, buf, 32, 0, (struct sockaddr *)&myaddr, &fromlen);
-   c_warning2(false, "<<<<<<<<<" );
-
-    return RC_OK;
-}
 
 
 rec_t action_retr(cmd_t * infos)
@@ -276,18 +243,7 @@ rec_t action_retr(cmd_t * infos)
     if(!check_auth(infos))
 	return RC_NO_AUTH;
 
-    rec_t r;
 
-    if( (r = create_dgram_channel(infos)) != RC_OK )
-	return r;
-/*
-
-       ssize_t sendto(int s, const void *buf, size_t len, int flags,
-                      const struct sockaddr *to, socklen_t tolen);
-       char * buff = "ceci est un test\n";
-       sendto(infos->fd, buff, strlen(buff), 0
-*/
-    c_warning2(false, "Not Yet Implemented " );
     return RC_OK;
 }
 
@@ -298,12 +254,55 @@ rec_t action_put(cmd_t * infos)
 
     rec_t r;
 
-    if( (r = create_dgram_channel(infos)) != RC_OK )
-	return r;
+    struct sockaddr_in myaddr, si_other;
+
+    if((infos->datafd = socket(AF_INET, SOCK_DGRAM, 0)) < 0)
+	return RC_SOCKET_ERR;
+
+    myaddr.sin_family = AF_INET;
+    myaddr.sin_port = htons(SERVER_DEFAULT_DATA_PORT);
+    myaddr.sin_addr.s_addr = htonl(INADDR_ANY);
+    memset(myaddr.sin_zero, 0, sizeof(myaddr.sin_zero));
+
+    if(bind(infos->datafd, (struct sockaddr *)&myaddr, sizeof(myaddr)) < 0)
+    {
+	close(infos->datafd);
+	return RC_SOCKET_ERR;
+    }
+    
+    char buff[MAX_MSG_LEN];
+
+    snprintf(buff, MAX_MSG_LEN, "(%d)", ntohs(myaddr.sin_port));
+
+    if(send_answer(infos->fd, A_OK_PORT, 0, buff) < 0)
+    {
+	close(infos->datafd);
+	return RC_SOCKET_ERR;
+    }
 
 
-    c_warning2(false, "Not Yet Implemented " );
-    return RC_OK;
+    socklen_t fromlen = sizeof(myaddr);
+
+    int file = open(infos->args[0], DEFAULT_WRITE_FILE_FLAGS, 0666);
+
+    if(file < 0)
+    {
+	close(infos->datafd);
+	return errno == EACCES ? RC_ACCESS_DENIED : RC_BAD_FILEDIR;
+    }
+
+    int n = revcfile(file, infos->datafd, atoi(infos->args[1]), (struct sockaddr *)&myaddr, &fromlen);
+
+    close(file);
+    close(infos->datafd);
+
+    if(n == -2)
+	return RC_BAD_FILEDIR;
+    else if(n == -1)
+	return RC_SOCKET_ERR;
+    else
+	return RC_OK;
+
 }
 
 

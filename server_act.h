@@ -41,8 +41,6 @@ rec_t action_quit(cmd_t * infos);
 rec_t action_auth(cmd_t * infos);
 rec_t action_error(cmd_t * infos);
 
-rec_t create_dgram_channel(cmd_t * infos);
-
 bool check_auth(cmd_t * infos);
 
 

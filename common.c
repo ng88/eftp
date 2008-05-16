@@ -10,7 +10,7 @@
 #include "bool.h"
 #include "assert.h"
 
-int sendall(int fd, char * buff, size_t size)
+int sendtoall(int fd, char * buff, size_t size, struct sockaddr *to, socklen_t tolen)
 {
     c_assert(buff && size);
 
@@ -20,7 +20,7 @@ int sendall(int fd, char * buff, size_t size)
 
     while(total < size)
     {
-        n = send(fd, buff + total, bytesleft, MSG_NOSIGNAL);
+        n = sendto(fd, buff + total, bytesleft, MSG_NOSIGNAL, to, tolen);
 
         if (n == -1)
 	    break;
@@ -33,7 +33,7 @@ int sendall(int fd, char * buff, size_t size)
 } 
 
 
-int recvall(int fd, char * buff, size_t size)
+int recvfromall(int fd, char * buff, size_t size, struct sockaddr *from, socklen_t *fromlen)
 {
     c_assert(buff);
 
@@ -43,7 +43,7 @@ int recvall(int fd, char * buff, size_t size)
 
     while(total < size)
     {
-        n = recv(fd, buff + total, bytesleft, MSG_NOSIGNAL);
+        n = recvfrom(fd, buff + total, bytesleft, MSG_NOSIGNAL, from, fromlen);
 
         if (n == -1)
 	    break;
@@ -123,6 +123,51 @@ int recvallline(int fd, char * buff, size_t s)
 
     return n == -1 ? -1 : 0;
 }
+
+int sendfile(int fdfile, int fd, struct sockaddr *to, socklen_t tolen)
+{
+    char buff[DEFAULT_BUFF_SIZE];
+
+    int n;
+
+    do
+    {
+	n = read(fdfile, buff, DEFAULT_BUFF_SIZE);
+	if(n < 0)
+	    return -2;
+;
+	if(sendtoall(fd, buff, n, to, tolen) < 0)
+	    return -1;
+
+    }
+    while(n > 0);
+
+    return 0;
+}
+
+int revcfile(int fdfile, int fd, size_t filesize, struct sockaddr *from, socklen_t *fromlen)
+{
+    char buff[DEFAULT_BUFF_SIZE];
+
+    size_t tot = 0;
+
+    do
+    {
+	int n = recvfrom(fd, buff, DEFAULT_BUFF_SIZE, MSG_NOSIGNAL, from, fromlen);
+	if(n < 0)
+	    return -1;
+
+	if(writeall(fdfile, buff, n) < 0)
+	    return -2;
+
+	tot += n;
+
+    }
+    while(tot < filesize);
+
+    return 0;
+}
+
 
 
 

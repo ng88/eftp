@@ -6,6 +6,13 @@
 #define MXSTR(s) MSTR(s)
 #define MSTR(s) #s
 
+#define DEFAULT_WRITE_FILE_FLAGS \
+      (O_WRONLY | O_CREAT)
+
+#define DEFAULT_READ_FILE_FLAGS \
+      (O)
+
+
 #ifdef __GNUC__
 
 #define __max(a,b) \
