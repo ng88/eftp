@@ -201,7 +201,7 @@ int recvfile_raw(int fdfile, int fd, size_t filesize, struct sockaddr *from, soc
 enum { HEADER_SIZE = sizeof(uint16_t) * 2 };
 
 /** send/recv avec fiabilite */
-int sendfile_reliable(int fdfile, int fd,
+int sendfile_reliable(int fdfile, int fdfrom, int fdto,
 		      struct sockaddr *from,
 		      struct sockaddr *to, socklen_t len)
 {
@@ -226,14 +226,15 @@ int sendfile_reliable(int fdfile, int fd,
 	do
 	{
 
-	    if(sendtoall(fd, (char*)header, HEADER_SIZE, to, len) < 0)
+	    if(sendtoall(fdto, (char*)header, HEADER_SIZE, to, len) < 0)
 		return -1;
 
-	    if(sendtoall(fd, buff, n, to, len) < 0)
+	    if(sendtoall(fdto, buff, n, to, len) < 0)
 		return -1;
 
+	    dbg_printf("ack enattende\n");
 	    /* attend l'accusé */
-	    if(recvfromall(fd, &ack, sizeof(ack), from, len) < 0)
+	    if(recvfromall(fdfrom, &ack, sizeof(ack), from, len) < 0)
 		return -1;
 
 	    dbg_printf("ack recu=%c\n", ack);
@@ -247,7 +248,7 @@ int sendfile_reliable(int fdfile, int fd,
     return 0;
 }
 
-int recvfile_reliable(int fdfile, int fd, size_t filesize, 
+int recvfile_reliable(int fdfile, int fdfrom, int fdto, size_t filesize, 
 		      struct sockaddr *from,
 		      struct sockaddr *to, socklen_t len)
 {
@@ -264,7 +265,7 @@ int recvfile_reliable(int fdfile, int fd, size_t filesize,
 	char ack = 'E';
 	do
 	{
-	    int n = recvfromall(fd, (char*)header, HEADER_SIZE, from, len);
+	    int n = recvfromall(fdfrom, (char*)header, HEADER_SIZE, from, len);
 	    if(n < 0)
 		return -1;
 
@@ -278,16 +279,19 @@ int recvfile_reliable(int fdfile, int fd, size_t filesize,
 	    if(header[0] == 0)
 		return 0;
 
-	    n = recvfromall(fd, buff, header[0], from, len);
+	    n = recvfromall(fdfrom, buff, header[0], from, len);
 	    if(n < 0)
 		return -1;
 
 	    ack = 'O';
 
+	    usleep(1000*500);
 	    dbg_printf("ack envye=%c\n", ack);
 
-	    if(sendtoall(fd, &ack, sizeof(ack), to, len) < 0)
+	    if(sendtoall(fdto, &ack, sizeof(ack), to, len) < 0)
 		return -1;
+	    dbg_printf("ack envye=%c ok\n", ack);
+
 	}
 	while(ack != 'O');
 

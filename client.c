@@ -436,12 +436,23 @@ void action_get(client_infos_t * infos)
 
 #ifdef ENABLE_RELIABILITY
 	struct sockaddr_in myaddr2;
+	int datafd2;
+
+	if((datafd2 = socket(AF_INET, SOCK_DGRAM, 0)) < 0)
+	{
+	    print_error("socket error");
+	    close(file);
+	    close(datafd);
+	    return;
+	}
+
 	myaddr2.sin_family = AF_INET;
 	myaddr2.sin_port = myaddr.sin_port;
-	myaddr2.sin_port = htons(ntohs(myaddr.sin_port) );
+	myaddr2.sin_port = htons(ntohs(myaddr.sin_port) + 1);
 	memset(myaddr2.sin_zero, 0, sizeof(myaddr2.sin_zero));
 
-	int n = recvfile_reliable(file, datafd, size, (struct sockaddr *)&myaddr, (struct sockaddr *)&myaddr2, sizeof(myaddr2));
+	int n = recvfile_reliable(file, datafd, datafd2, size, (struct sockaddr *)&myaddr, (struct sockaddr *)&myaddr2, sizeof(myaddr2));
+	close(datafd2);
 #else
 	int n = recvfile_raw(file, datafd, size, (struct sockaddr *)&myaddr, sizeof(myaddr));
 #endif
@@ -501,19 +512,31 @@ void action_put(client_infos_t * infos)
 
 #ifdef ENABLE_RELIABILITY
 	struct sockaddr_in myaddr2;
+	int datafd2;
+
+	if((datafd2 = socket(AF_INET, SOCK_DGRAM, 0)) < 0)
+	{
+	    print_error("socket error");
+	    close(file);
+	    close(datafd);
+	    return;
+	}
+
 	myaddr2.sin_family = AF_INET;
-	myaddr2.sin_port = htons(ntohs(myaddr.sin_port) );
+	myaddr2.sin_port = htons(ntohs(myaddr.sin_port) + 1);
 	myaddr2.sin_addr.s_addr = htonl(INADDR_ANY);
 	memset(myaddr2.sin_zero, 0, sizeof(myaddr2.sin_zero));
 
-	/*if(bind(datafd, (struct sockaddr *)&myaddr2, sizeof(myaddr2)) < 0)
+	if(bind(datafd2, (struct sockaddr *)&myaddr2, sizeof(myaddr2)) < 0)
 	{
 	    close(datafd);
+	    close(datafd2);
 	    close(file);
 	    return;
-	    }*/
+	}
 
-	int n = sendfile_reliable(file, datafd, (struct sockaddr *)&myaddr2, (struct sockaddr *)&myaddr, sizeof(myaddr));
+	int n = sendfile_reliable(file, datafd2, datafd, (struct sockaddr *)&myaddr2, (struct sockaddr *)&myaddr, sizeof(myaddr));
+	close(datafd2);
 #else
 	int n = sendfile_raw(file, datafd, (struct sockaddr *)&myaddr, sizeof(myaddr));
 #endif

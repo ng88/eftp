@@ -22,12 +22,12 @@ int sendfile_raw(int fdfile, int fd, struct sockaddr *to, socklen_t tolen);
 int recvfile_raw(int fdfile, int fd, size_t filesize, struct sockaddr *from, socklen_t fromlen);
 
 /** send/recv avec fiabilite */
-int sendfile_reliable(int fdfile, int fd,
+int sendfile_reliable(int fdfile, int fdfrom, int fdto,
 		      struct sockaddr *from,
 		      struct sockaddr *to,
 		      socklen_t len);
 
-int recvfile_reliable(int fdfile, int fd, size_t filesize, 
+int recvfile_reliable(int fdfile, int fdrom, int fdto, size_t filesize, 
 		      struct sockaddr *from,
 		      struct sockaddr *to,
 		      socklen_t len);

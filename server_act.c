@@ -290,19 +290,29 @@ rec_t action_retr(cmd_t * infos)
 
 #ifdef ENABLE_RELIABILITY
 	struct sockaddr_in myaddr2;
+	int datafd2;
+
+	if((datafd2 = socket(AF_INET, SOCK_DGRAM, 0)) < 0)
+	{
+	    close(file);
+	    close(infos->datafd);
+	    return RC_SOCKET_ERR;
+	}
 	myaddr2.sin_family = AF_INET;
-	myaddr2.sin_port = htons(ntohs(myaddr.sin_port) );
+	myaddr2.sin_port = htons(ntohs(myaddr.sin_port) + 1);
 	myaddr2.sin_addr.s_addr = htonl(INADDR_ANY);
 	memset(myaddr2.sin_zero, 0, sizeof(myaddr2.sin_zero));
 
-	/*if(bind(infos->datafd, (struct sockaddr *)&myaddr2, sizeof(myaddr2)) < 0)
+	if(bind(datafd2, (struct sockaddr *)&myaddr2, sizeof(myaddr2)) < 0)
 	{
 	    close(infos->datafd);
+	    close(datafd2);
 	    close(file);
 	    return RC_SOCKET_ERR;
-	    }*/
+	}
 
-	int n = sendfile_reliable(file, infos->datafd, (struct sockaddr *)&myaddr2, (struct sockaddr *)&myaddr, sizeof(myaddr));
+	int n = sendfile_reliable(file, datafd2, infos->datafd, (struct sockaddr *)&myaddr2, (struct sockaddr *)&myaddr, sizeof(myaddr));
+	close(datafd2);
 #else
 	int n = sendfile_raw(file, infos->datafd, (struct sockaddr *)&myaddr, sizeof(myaddr));
 #endif
@@ -364,12 +374,21 @@ rec_t action_put(cmd_t * infos)
 
 #ifdef ENABLE_RELIABILITY
 	struct sockaddr_in myaddr2;
+	int datafd2;
+
+	if((datafd2 = socket(AF_INET, SOCK_DGRAM, 0)) < 0)
+	{
+	    close(file);
+	    close(infos->datafd);
+	    return RC_SOCKET_ERR;
+	}
 	myaddr2.sin_family = AF_INET;
 	myaddr2.sin_port = myaddr.sin_port;
-	myaddr2.sin_port = htons(ntohs(myaddr.sin_port) );
+	myaddr2.sin_port = htons(ntohs(myaddr.sin_port) + 1);
 	memset(myaddr2.sin_zero, 0, sizeof(myaddr2.sin_zero));
 
-	int n = recvfile_reliable(file, infos->datafd, atoi(infos->args[1]), (struct sockaddr *)&myaddr, (struct sockaddr *)&myaddr2, sizeof(myaddr2));
+	int n = recvfile_reliable(file, infos->datafd, datafd2, atoi(infos->args[1]), (struct sockaddr *)&myaddr, (struct sockaddr *)&myaddr2, sizeof(myaddr2));
+	close(datafd2);
 #else
 	int n = recvfile_raw(file, infos->datafd, atoi(infos->args[1]), (struct sockaddr *)&myaddr, sizeof(myaddr));
 #endif
