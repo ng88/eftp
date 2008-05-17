@@ -64,6 +64,9 @@ int recvfromall(int fd, char * buff, size_t size, struct sockaddr *from, socklen
 {
     c_assert(buff);
 
+    if(size == 0)
+	return 0;
+
     size_t total = 0;
     size_t bytesleft = size;
     int n = -1;
@@ -159,7 +162,7 @@ int sendfile_raw(int fdfile, int fd, struct sockaddr *to, socklen_t tolen)
 	n = read(fdfile, buff, DEFAULT_BUFF_SIZE);
 	if(n < 0)
 	    return -2;
-;
+
 	if(sendtoall(fd, buff, n, to, tolen) < 0)
 	    return -1;
 
@@ -191,6 +194,88 @@ int recvfile_raw(int fdfile, int fd, size_t filesize, struct sockaddr *from, soc
 
     return 0;
 }
+
+
+enum { HEADER_SIZE = sizeof(uint16_t) * 2 };
+
+/** send/recv avec fiabilite */
+int sendfile_reliable(int fdfile, int fd,
+		      struct sockaddr *from, socklen_t *fromlen,
+		      struct sockaddr *to, socklen_t tolen)
+{
+    char buff[DEFAULT_BUFF_SIZE];
+    uint16_t header[2];
+
+    int n;
+
+    do
+    {
+	n = read(fdfile, buff, DEFAULT_BUFF_SIZE);
+	if(n < 0)
+	    return -2;
+
+	if(n == 0)
+	    break;
+
+	header[0] = htons((uint16_t)n);
+	header[1] = htons((uint16_t)0);
+
+	if(sendtoall(fd, (char*)header, HEADER_SIZE, to, tolen) < 0)
+	    return -1;
+
+	if(sendtoall(fd, buff, n, to, tolen) < 0)
+	    return -1;
+
+    }
+    while(n > 0);
+
+    return 0;
+}
+
+int recvfile_reliable(int fdfile, int fd, size_t filesize, 
+		      struct sockaddr *from, socklen_t *fromlen,
+		      struct sockaddr *to, socklen_t tolen)
+{
+    char buff[DEFAULT_BUFF_SIZE];
+    uint16_t header[2];
+
+    dbg_printf("filesize=%u\n", filesize);
+
+    size_t tot = 0;
+
+    do
+    {
+	int n = recvfromall(fd, (char*)header, HEADER_SIZE, from, fromlen);
+	if(n < 0)
+	    return -1;
+
+	header[0] = ntohs(header[0]);
+	header[1] = ntohs(header[1]);
+
+	dbg_printf("header=%u %u  received=%u\n", header[0], header[1], tot);
+
+	c_assert2(header[0] <= DEFAULT_BUFF_SIZE, "protocol violation");
+
+	if(header[0] == 0)
+	    break;
+
+	n = recvfromall(fd, buff, header[0], from, fromlen);
+	if(n < 0)
+	    return -1;
+
+	if(writeall(fdfile, buff, header[0]) < 0)
+	    return -2;
+
+	tot += header[0];
+
+    }
+    while(tot < filesize);
+
+dbg_printf("done\n");
+
+    return 0;
+}
+
 
 
 
