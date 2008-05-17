@@ -436,7 +436,7 @@ void action_get(client_infos_t * infos)
 	    return;
 	}
 
-	int n = revcfile(file, datafd, size, (struct sockaddr *)&myaddr, &fromlen);
+	int n = recvfile(file, datafd, size, (struct sockaddr *)&myaddr, &fromlen);
 
 	close(file);
 	close(datafd);

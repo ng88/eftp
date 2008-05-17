@@ -346,7 +346,7 @@ rec_t action_put(cmd_t * infos)
 	return errno == EACCES ? RC_ACCESS_DENIED : RC_BAD_FILEDIR;
     }
 
-    int n = revcfile(file, infos->datafd, atoi(infos->args[1]), (struct sockaddr *)&myaddr, &fromlen);
+    int n = recvfile(file, infos->datafd, atoi(infos->args[1]), (struct sockaddr *)&myaddr, &fromlen);
 
     close(file);
     close(infos->datafd);

@@ -5,6 +5,18 @@ else
     DDPFLAGS=
 endif
 
+ifdef ENABLE_RELIABILITY
+    ER=-DENABLE_RELIABILITY=1
+else
+    ER=
+endif
+
+ifdef ENABLE_UDP_ERRORS
+    EU=-DENABLE_UDP_ERRORS=1
+else
+    EU=
+endif
+
 ifdef DEBUG
     DEBUGFLAGS=-g -ggdb -dH -D_DEBUG_=1 -DDEBUG=1
     STRIP=@echo
@@ -20,7 +32,7 @@ else
 endif
 
 CC=gcc
-CFLAGS=-W -Wall -Wno-unused -O3 $(DDPFLAGS) $(DEBUGFLAGS) $(ASSERTFLAGS)
+CFLAGS=-W -Wall -Wno-unused -O3 $(EU) $(ER) $(DDPFLAGS) $(DEBUGFLAGS) $(ASSERTFLAGS)
 LDFLAGS=
 
 SRC=protocol.c common.c vector.c misc.c

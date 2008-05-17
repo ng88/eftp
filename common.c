@@ -7,7 +7,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 
-#include "bool.h"
+#include "misc.h"
 #include "assert.h"
 
 int sendtoall(int fd, char * buff, size_t size, struct sockaddr *to, socklen_t tolen)
@@ -23,7 +23,31 @@ int sendtoall(int fd, char * buff, size_t size, struct sockaddr *to, socklen_t t
 
     while(total < size)
     {
-        n = sendto(fd, buff + total, bytesleft, MSG_NOSIGNAL, to, tolen);
+
+#ifdef ENABLE_UDP_ERRORS
+	/* en UDP seulement */
+	int j = to ? (1 + (int) (20.0 * (rand() / (RAND_MAX + 1.0)))) : 0;
+	switch(j)
+	{
+	case 20:
+	    /* on perd un petit paquet 1 fois sur 20 */
+	    n = min_u(bytesleft, (size_t)128);
+	    c_warning2(false, "packet lost");
+	    break;
+	case 18:
+	case 17:
+	    /* on envoie simule des erreurs 2 fois sur 20 */
+	    if(bytesleft > 0) buff[total] = buff[total] ^ 77;
+	    if(bytesleft > 1) buff[total + 1] = buff[total + 1] ^ 45;
+	    c_warning2(false, "packet corrupted");
+	case 0:
+	default:
+	    /* on envoie normalement sinon */
+	    n = sendto(fd, buff + total, bytesleft, MSG_NOSIGNAL, to, tolen);
+	}
+#else
+	n = sendto(fd, buff + total, bytesleft, MSG_NOSIGNAL, to, tolen);
+#endif        
 
         if (n == -1)
 	    break;
@@ -124,7 +148,7 @@ int recvallline(int fd, char * buff, size_t s)
     return n == -1 ? -1 : 0;
 }
 
-int sendfile(int fdfile, int fd, struct sockaddr *to, socklen_t tolen)
+int sendfile_raw(int fdfile, int fd, struct sockaddr *to, socklen_t tolen)
 {
     char buff[DEFAULT_BUFF_SIZE];
 
@@ -145,7 +169,7 @@ int sendfile(int fdfile, int fd, struct sockaddr *to, socklen_t tolen)
     return 0;
 }
 
-int revcfile(int fdfile, int fd, size_t filesize, struct sockaddr *from, socklen_t *fromlen)
+int recvfile_raw(int fdfile, int fd, size_t filesize, struct sockaddr *from, socklen_t *fromlen)
 {
     char buff[DEFAULT_BUFF_SIZE];
 

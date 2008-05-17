@@ -37,8 +37,6 @@ int start_server(user_pool_t * eu, port_t port)
 
     int yes = 1;
 
-    chdir("/");
-
     if((fdlisten = socket(AF_INET, SOCK_STREAM, 0)) == -1)
     {
         perror("socket");

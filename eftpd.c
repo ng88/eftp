@@ -21,6 +21,7 @@ void usage(int ev)
 	  "  Accepted options:\n"
           "   -h                 print this help and quit\n"
 	  "   -d                 execute server as a system daemon\n"
+	  "   -r <dir>           initial current directory\n"
 	  "   -u <file>          specify the user configuration file\n"
 	  "                      (default is " DEFAULT_USER_FILE  ")\n"
 	  "   -p <port>          use 'port' instead of the default port (" MXSTR(SERVER_DEFAULT_PORT) ")\n"
@@ -45,10 +46,11 @@ int main(int argc, char ** argv)
 
     bool exe_daemon = false;
     port_t port = SERVER_DEFAULT_PORT;
+    char * ch_dir = NULL;
 
     FILE * fusers = NULL;
 
-    while( (optch = getopt(argc, argv, "hdp:u:")) != EOF )
+    while( (optch = getopt(argc, argv, "hdp:u:r:")) != EOF )
     {
 	switch(optch)
 	{
@@ -66,6 +68,9 @@ int main(int argc, char ** argv)
 	    break;
 	case 'd':
 	    exe_daemon = true;
+	    break;
+	case 'r':
+	    ch_dir = optarg;
 	    break;
 	case 'h':
 	    usage(EXIT_SUCCESS);
@@ -113,6 +118,9 @@ int main(int argc, char ** argv)
 	    return EXIT_FAILURE;
 	}
     }
+
+    if(ch_dir)
+	chdir(ch_dir);
 
     int r = start_server(pool, port);
 
