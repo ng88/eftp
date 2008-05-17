@@ -60,7 +60,7 @@ int sendtoall(int fd, char * buff, size_t size, struct sockaddr *to, socklen_t t
 } 
 
 
-int recvfromall(int fd, char * buff, size_t size, struct sockaddr *from, socklen_t *fromlen)
+int recvfromall(int fd, char * buff, size_t size, struct sockaddr *from, socklen_t fromlen)
 {
     c_assert(buff);
 
@@ -73,7 +73,8 @@ int recvfromall(int fd, char * buff, size_t size, struct sockaddr *from, socklen
 
     while(total < size)
     {
-        n = recvfrom(fd, buff + total, bytesleft, MSG_NOSIGNAL, from, fromlen);
+	socklen_t fl = fromlen;
+        n = recvfrom(fd, buff + total, bytesleft, MSG_NOSIGNAL, from, &fl);
 
         if (n == -1)
 	    break;
@@ -172,7 +173,7 @@ int sendfile_raw(int fdfile, int fd, struct sockaddr *to, socklen_t tolen)
     return 0;
 }
 
-int recvfile_raw(int fdfile, int fd, size_t filesize, struct sockaddr *from, socklen_t *fromlen)
+int recvfile_raw(int fdfile, int fd, size_t filesize, struct sockaddr *from, socklen_t fromlen)
 {
     char buff[DEFAULT_BUFF_SIZE];
 
@@ -180,7 +181,8 @@ int recvfile_raw(int fdfile, int fd, size_t filesize, struct sockaddr *from, soc
 
     do
     {
-	int n = recvfrom(fd, buff, DEFAULT_BUFF_SIZE, MSG_NOSIGNAL, from, fromlen);
+	socklen_t fl = fromlen;
+	int n = recvfrom(fd, buff, DEFAULT_BUFF_SIZE, MSG_NOSIGNAL, from, &fl);
 	if(n < 0)
 	    return -1;
 
@@ -200,8 +202,8 @@ enum { HEADER_SIZE = sizeof(uint16_t) * 2 };
 
 /** send/recv avec fiabilite */
 int sendfile_reliable(int fdfile, int fd,
-		      struct sockaddr *from, socklen_t *fromlen,
-		      struct sockaddr *to, socklen_t tolen)
+		      struct sockaddr *from,
+		      struct sockaddr *to, socklen_t len)
 {
     char buff[DEFAULT_BUFF_SIZE];
     uint16_t header[2];
@@ -220,11 +222,24 @@ int sendfile_reliable(int fdfile, int fd,
 	header[0] = htons((uint16_t)n);
 	header[1] = htons((uint16_t)0);
 
-	if(sendtoall(fd, (char*)header, HEADER_SIZE, to, tolen) < 0)
-	    return -1;
+	char ack = 'E';
+	do
+	{
 
-	if(sendtoall(fd, buff, n, to, tolen) < 0)
-	    return -1;
+	    if(sendtoall(fd, (char*)header, HEADER_SIZE, to, len) < 0)
+		return -1;
+
+	    if(sendtoall(fd, buff, n, to, len) < 0)
+		return -1;
+
+	    /* attend l'accusé */
+	    if(recvfromall(fd, &ack, sizeof(ack), from, len) < 0)
+		return -1;
+
+	    dbg_printf("ack recu=%c\n", ack);
+
+	}
+	while(ack != 'O');
 
     }
     while(n > 0);
@@ -233,8 +248,8 @@ int sendfile_reliable(int fdfile, int fd,
 }
 
 int recvfile_reliable(int fdfile, int fd, size_t filesize, 
-		      struct sockaddr *from, socklen_t *fromlen,
-		      struct sockaddr *to, socklen_t tolen)
+		      struct sockaddr *from,
+		      struct sockaddr *to, socklen_t len)
 {
     char buff[DEFAULT_BUFF_SIZE];
     uint16_t header[2];
@@ -245,29 +260,42 @@ int recvfile_reliable(int fdfile, int fd, size_t filesize,
 
     do
     {
-	int n = recvfromall(fd, (char*)header, HEADER_SIZE, from, fromlen);
-	if(n < 0)
-	    return -1;
 
-	header[0] = ntohs(header[0]);
-	header[1] = ntohs(header[1]);
+	char ack = 'E';
+	do
+	{
+	    int n = recvfromall(fd, (char*)header, HEADER_SIZE, from, len);
+	    if(n < 0)
+		return -1;
 
-	dbg_printf("header=%u %u  received=%u\n", header[0], header[1], tot);
+	    header[0] = ntohs(header[0]);
+	    header[1] = ntohs(header[1]);
 
-	c_assert2(header[0] <= DEFAULT_BUFF_SIZE, "protocol violation");
+	    dbg_printf("header=%u %u  received=%u\n", header[0], header[1], tot);
+	    
+	    c_assert2(header[0] <= DEFAULT_BUFF_SIZE, "protocol violation");
 
-	if(header[0] == 0)
-	    break;
+	    if(header[0] == 0)
+		return 0;
 
-	n = recvfromall(fd, buff, header[0], from, fromlen);
-	if(n < 0)
-	    return -1;
+	    n = recvfromall(fd, buff, header[0], from, len);
+	    if(n < 0)
+		return -1;
+
+	    ack = 'O';
+
+	    dbg_printf("ack envye=%c\n", ack);
+
+	    if(sendtoall(fd, &ack, sizeof(ack), to, len) < 0)
+		return -1;
+	}
+	while(ack != 'O');
 
 	if(writeall(fdfile, buff, header[0]) < 0)
 	    return -2;
 
 	tot += header[0];
-
+	    
     }
     while(tot < filesize);
 

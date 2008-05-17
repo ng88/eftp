@@ -213,9 +213,9 @@ rec_t action_quit(cmd_t * infos)
 
 rec_t action_auth(cmd_t * infos)
 {
-    printf("%s:%s\n", infos->args[0], infos->args[1]);
-
     user_t * user = get_user_from_name(infos->pool, infos->args[0]);
+
+    infos->user = NULL;
 
     if(!user)
 	return RC_BAD_AUTH;
@@ -290,20 +290,19 @@ rec_t action_retr(cmd_t * infos)
 
 #ifdef ENABLE_RELIABILITY
 	struct sockaddr_in myaddr2;
-	socklen_t fromlen = sizeof(myaddr);
 	myaddr2.sin_family = AF_INET;
-	myaddr2.sin_port = htons(ntohs(myaddr.sin_port) + 1);
+	myaddr2.sin_port = htons(ntohs(myaddr.sin_port) );
 	myaddr2.sin_addr.s_addr = htonl(INADDR_ANY);
 	memset(myaddr2.sin_zero, 0, sizeof(myaddr2.sin_zero));
 
-	if(bind(infos->datafd, (struct sockaddr *)&myaddr2, sizeof(myaddr2)) < 0)
+	/*if(bind(infos->datafd, (struct sockaddr *)&myaddr2, sizeof(myaddr2)) < 0)
 	{
 	    close(infos->datafd);
 	    close(file);
 	    return RC_SOCKET_ERR;
-	}
+	    }*/
 
-	int n = sendfile_reliable(file, infos->datafd, (struct sockaddr *)&myaddr2, &fromlen, (struct sockaddr *)&myaddr, sizeof(myaddr));
+	int n = sendfile_reliable(file, infos->datafd, (struct sockaddr *)&myaddr2, (struct sockaddr *)&myaddr, sizeof(myaddr));
 #else
 	int n = sendfile_raw(file, infos->datafd, (struct sockaddr *)&myaddr, sizeof(myaddr));
 #endif
@@ -354,7 +353,6 @@ rec_t action_put(cmd_t * infos)
     }
 
 
-    socklen_t fromlen = sizeof(myaddr);
 
     int file = open(infos->args[0], DEFAULT_WRITE_FILE_FLAGS, 0666);
 
@@ -368,12 +366,12 @@ rec_t action_put(cmd_t * infos)
 	struct sockaddr_in myaddr2;
 	myaddr2.sin_family = AF_INET;
 	myaddr2.sin_port = myaddr.sin_port;
-	myaddr2.sin_port = htons(ntohs(myaddr.sin_port) + 1);
+	myaddr2.sin_port = htons(ntohs(myaddr.sin_port) );
 	memset(myaddr2.sin_zero, 0, sizeof(myaddr2.sin_zero));
 
-	int n = recvfile_reliable(file, infos->datafd, atoi(infos->args[1]), (struct sockaddr *)&myaddr, &fromlen, (struct sockaddr *)&myaddr2, sizeof(myaddr2));
+	int n = recvfile_reliable(file, infos->datafd, atoi(infos->args[1]), (struct sockaddr *)&myaddr, (struct sockaddr *)&myaddr2, sizeof(myaddr2));
 #else
-	int n = recvfile_raw(file, infos->datafd, atoi(infos->args[1]), (struct sockaddr *)&myaddr, &fromlen);
+	int n = recvfile_raw(file, infos->datafd, atoi(infos->args[1]), (struct sockaddr *)&myaddr, sizeof(myaddr));
 #endif
     
 

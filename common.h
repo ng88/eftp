@@ -8,26 +8,29 @@
 int sendtoall(int fd, char * buff, size_t size, struct sockaddr *to, socklen_t tolen);
 
 /** Receive 'size' bytes from 'fd' to 'buff' */
-int recvfromall(int fd, char * buff, size_t size, struct sockaddr *from, socklen_t *fromlen);
+int recvfromall(int fd, char * buff, size_t size, struct sockaddr *from, socklen_t fromlen);
 
 
 #define sendall(fd, buff, size) sendtoall(fd, buff, size, NULL, 0)
-#define recvall(fd, buff, size) recvfromall(fd, buff, size, NULL, NULL)
+#define recvall(fd, buff, size) recvfromall(fd, buff, size, NULL, 0)
 
 int recvallline(int fd, char * dest, size_t s);
 
 
 /** send/recv sans fiabilite */
 int sendfile_raw(int fdfile, int fd, struct sockaddr *to, socklen_t tolen);
-int recvfile_raw(int fdfile, int fd, size_t filesize, struct sockaddr *from, socklen_t *fromlen);
+int recvfile_raw(int fdfile, int fd, size_t filesize, struct sockaddr *from, socklen_t fromlen);
 
 /** send/recv avec fiabilite */
 int sendfile_reliable(int fdfile, int fd,
-		      struct sockaddr *from, socklen_t *fromlen,
-		      struct sockaddr *to, socklen_t tolen);
+		      struct sockaddr *from,
+		      struct sockaddr *to,
+		      socklen_t len);
+
 int recvfile_reliable(int fdfile, int fd, size_t filesize, 
-		      struct sockaddr *from, socklen_t *fromlen,
-		      struct sockaddr *to, socklen_t tolen);
+		      struct sockaddr *from,
+		      struct sockaddr *to,
+		      socklen_t len);
 
 int writeall(int fd, void * src, size_t s);
 int readall(int fd, void * src, size_t s);
