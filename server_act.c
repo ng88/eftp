@@ -207,7 +207,7 @@ rec_t action_help(cmd_t * infos)
 
 rec_t action_quit(cmd_t * infos)
 {
-    send_answer(infos->fd, A_OK, 0, "bye bye");
+    send_answer(infos->fd, A_OK, RC_QUIT, "bye bye");
     return RC_QUIT;
 }
 
