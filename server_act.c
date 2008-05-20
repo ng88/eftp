@@ -180,7 +180,7 @@ rec_t action_help(cmd_t * infos)
     enum { BUFFS= 32 };
     char buff[BUFFS];
 
-    if(send_answer(infos->fd, A_OK_DATA_FOLLOW, 0, "following commands are available") < 0)
+    if(send_answer(infos->fd, A_OK_DATA_FOLLOW, 0, "following commands are availables") < 0)
 	return RC_SOCKET_ERR;
 
     for(i = 0; i < C_ERROR; ++i)
