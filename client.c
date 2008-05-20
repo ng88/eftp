@@ -34,6 +34,7 @@ static char * cmd_names[CL_C_COUNT] =
 	       "rmdir",
 	       "quit",
 	       "rm",
+	       "lcd",
 	   };
 
 static char cmd_arg_count[CL_C_COUNT] =
@@ -47,6 +48,7 @@ static char cmd_arg_count[CL_C_COUNT] =
 	       1,
 	       1,
 	       0,
+	       1,
 	       1,
 	   };
 
@@ -62,6 +64,7 @@ static client_fn_t cmd_actions[C_COUNT] =
 	       &action_rmdir,
 	       &action_quit,
 	       &action_rm,
+	       &action_lcd,
 	   };
 
 static bool run;
@@ -395,6 +398,12 @@ void action_rm(client_infos_t * infos)
     send_command(infos, false, "DELE %s\n", infos->args[0]);
 }
 
+void action_lcd(client_infos_t * infos)
+{
+    if(chdir(infos->args[0]) < 0)
+	puts("> enable to change local directory");
+}
+
 void action_get(client_infos_t * infos)
 {
     struct sockaddr_in myaddr;
@@ -553,3 +562,5 @@ void action_put(client_infos_t * infos)
     else
 	close(file);
 }
+
+

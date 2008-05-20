@@ -7,7 +7,7 @@
 
 #define PROMPT "%eftp>: "
 #define CLIENT_CMD_MAX_ARG 4
-enum { CL_C_COUNT = 10 };
+enum { CL_C_COUNT = 11 };
 
 
 typedef struct
@@ -50,6 +50,6 @@ void action_mkdir(client_infos_t * infos);
 void action_rmdir(client_infos_t * infos);
 void action_quit(client_infos_t * infos);
 void action_rm(client_infos_t * infos);
-
+void action_lcd(client_infos_t * infos);
 
 #endif
