@@ -216,7 +216,7 @@ void parse_command(client_infos_t * infos, char * str)
 
 void print_error(char * str)
 {
-    fprintf(stderr, "error: %s\n", str);
+    fprintf(stderr, "> %s\n", str);
 }
 
 
@@ -401,7 +401,7 @@ void action_rm(client_infos_t * infos)
 void action_lcd(client_infos_t * infos)
 {
     if(chdir(infos->args[0]) < 0)
-	puts("> enable to change local directory");
+	print_error("enable to change local directory");
 }
 
 void action_get(client_infos_t * infos)

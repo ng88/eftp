@@ -1,0 +1,81 @@
+
+COMPILATION
+===========
+
+   1. Variables disponibles dans le Mafile
+
+	DISABLE_DEBUG_PRINT : si défini l'affichage des informations de débogage sera désactivé;
+	DEBUG : si défini l'exécutable contiendra les symboles de débogage;
+	NOASSERT : si défini les assertions ne seront pas utilisées;
+	ENABLE_UDP_ERRORS : si défini, la simulation d'erreur UDP sera activée;
+	ENABLE_RELIABILITY : si défini, on activera la fiabilité logiciel pour les transfert UDP (phase 2).
+
+   2. Cibles
+
+	all : construit le serveur et le client;
+	eftp : construit le client;
+	eftpd : construit le serveur;
+	clean : efface les fichiers objets;
+	mrproper : grand ménage.
+
+   3. Exemples
+
+	/!\ il faut faire un make clean si les variables ont été changées/!\
+
+
+	PHASE 1
+	=======
+
+	Avec messages de debogage :
+
+		make
+
+	Sans :
+
+		make clean
+		make DISABLE_DEBUG_PRINT=1
+
+	Avec simulation d'erreurs sur UDP :
+
+		make clean
+		make DISABLE_DEBUG_PRINT=1 ENABLE_UDP_ERRORS=1
+
+	PHASE 2
+	=======
+
+	Sans simulation d'erreurs sur UDP :
+
+		make clean
+		make ENABLE_RELIABILITY=1 DISABLE_DEBUG_PRINT=1
+
+	Avec simulation d'erreurs sur UDP :
+
+		make clean
+		make ENABLE_RELIABILITY=1 DISABLE_DEBUG_PRINT=1 ENABLE_UDP_ERRORS=1
+
+
+LANCEMENT
+=========
+
+   1. Serveur
+
+	Aide :
+
+		./eftpd -h
+
+	Lancement typique
+
+		./eftpd -u user_file -r /tmp/
+
+
+   1. Client
+
+	Aide :
+
+		./eftp -h
+
+	Lancement typique
+
+		./eftp 127.0.0.1
+
+
